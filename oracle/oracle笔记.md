@@ -8,4 +8,7 @@ drop user XXX cascade;
 select * from v$dbfie order by 1;   
    
 关闭oracle的log（例如不写undo）：   
-alter table XXX nologging;
+alter table XXX nologging;   
+   
+创建大于等于32G表空间时的bigfile选项：   
+create bigfile tablespace XXX datafile '/home/oracle/abc.dbf' size 1G autoextend on maxsize 32G;
