@@ -1,3 +1,6 @@
+   
+
+
 清理用户和表空间的步骤：   
 1. 删除用户的表空间   
 drop tablespace XXX including contents and datafiles;   
@@ -11,4 +14,10 @@ select * from v$dbfie order by 1;
 alter table XXX nologging;   
    
 创建大于等于32G表空间时的bigfile选项：   
-create bigfile tablespace XXX datafile '/home/oracle/abc.dbf' size 1G autoextend on maxsize 32G;
+create bigfile tablespace XXX datafile '/home/oracle/abc.dbf' size 1G autoextend on maxsize 32G;   
+   
+快速批量插入：   
+insert into XXX (id,name)   
+select 1,'a' from dual union all   
+select 2,'b' from dual union all   
+select 3,'c' from dual;
