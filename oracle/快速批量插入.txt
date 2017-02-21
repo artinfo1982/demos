@@ -1,0 +1,7 @@
+
+
+
+insert into XXX (id,name)
+select 1,'a' from dual union all
+select 2,'b' from dual union all
+select 3,'c' from dual;
