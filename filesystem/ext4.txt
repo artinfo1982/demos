@@ -1,0 +1,12 @@
+
+
+加载驱动：
+modprobe jbd2
+modprobe crc16
+insmod /lib/modules/2.6.32.59-0.7-default/weak-updates/extra/ext4.ko
+
+创建文件系统：
+mkfs.ext4 -N 500000 -I 128 -b 4096 -E lazy_itable_init=1 -O dir_index,uninit_bg,^has_journal -G 4 /dev/sdb
+
+挂载分区：
+mount -t ext4 -o data=writeback,errors=remount-ro,nodiratime,noatime,norelatime,nobh,barrier=0,inode_readahead_blks=32,orlov /dev/sdb /home/disk
