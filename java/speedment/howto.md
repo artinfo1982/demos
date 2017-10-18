@@ -35,4 +35,5 @@ speedment是一个实现了java ORM的框架，可以使用GUI图形界面连接
         </dependency>
     </dependencies>
 ```
-hello
+待maven下载完成后，maven->reimport，然后在idea中View->Tool Windows->Maven Projects，切换maven工程视图，在plugins->speedment下面双击speedment:tool，出现speedment的GUI界面，填写数据库信息，连接到数据库，点击generate，生成代码。   
+自己写main函数。
