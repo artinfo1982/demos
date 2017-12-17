@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-
 
-# python resnet_test.py --train_data=/home/zxh/tutorials/tutorial_data/mnist/mnist-train-nchw-leveldb --test_data=/home/zxh/tutorials/tutorial_data/mnist/mnist-test-nchw-leveldb --use_cpu=True --db_type=leveldb --batch_size=2 --epoch_size=10 --num_epochs=5
+# python resnet50_test.py --train_data=/home/zxh/tutorials/tutorial_data/mnist/mnist-train-nchw-leveldb --test_data=/home/zxh/tutorials/tutorial_data/mnist/mnist-test-nchw-leveldb --use_cpu=True --db_type=leveldb --batch_size=2 --epoch_size=20 --num_epochs=10
 
 from __future__ import absolute_import
 from __future__ import division
@@ -439,7 +439,7 @@ def Train(args):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Caffe2: Resnet-50 training"
+        description="Caffe2: resnet50 training"
     )
     parser.add_argument("--train_data", type=str, default=None, required=True,
                         help="Path to training data (or 'null' to simulate)")
