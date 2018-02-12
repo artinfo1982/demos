@@ -30,25 +30,25 @@ static int delay = -1;
 module_param(pid, int, S_IRUGO);
 module_param(delay, int, S_IRUGO);
 
-static int change_process_state(void)
+static int __init init(void)
 {
     struct task_struct *p;
     for_each_process(p)
     {
         if(p->pid == pid)
         {
-            set_task_state(p, EXIT_ZOMBIE);
+            p->exit_state = EXIT_ZOMBIE;
             mdelay(delay * 1000);
-            set_task_state(p, TASK_INTERRUPTIBLE);
+            p->exit_state = TASK_INTERRUPTIBLE;
             return 0;
         }
     }
     return 0;
 }
 
-static void nothing(void)
+static void __exit exit(void)
 {
 }
 
-module_init(change_process_state);
-module_exit(nothing);
+module_init(init);
+module_exit(exit);
