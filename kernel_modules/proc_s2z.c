@@ -13,12 +13,15 @@
  * 使用方法：
  * insmod ./proc_s2z.ko pid=xxxx delay=10  (表示Z状态持续10秒后恢复为S状态)
  * rmmod proc_s2z.ko  (卸载内核模块)
+ *
+ * 注意，在4.x的内核中，需要添加 #include <linux/sched/signal.h>，其他内核是否需要添加，请查阅for_each_process在哪个头文件中定义
  */
 
 #include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/sched.h>
+#include <linux/sched/signal.h>
 #include <linux/delay.h>
 
 MODULE_AUTHOR("ChenDong");
