@@ -13,11 +13,14 @@
  * 使用方法：
  * insmod ./proc_d2t.ko pid=xxxx
  * rmmod proc_d2t.ko  (卸载内核模块)
+ *
+ * 注意，在4.x的内核中，需要添加 #include <linux/sched/signal.h>，其他内核是否需要添加，请查阅for_each_process在哪个头文件中定义
  */
 
 #include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
+#include <linux/sched/signal.h>
 #include <linux/sched.h>
 
 MODULE_AUTHOR("ChenDong");
@@ -27,23 +30,23 @@ MODULE_DESCRIPTION("This module make process from D to T, then you can kill it")
 static int pid = -1;
 module_param(pid, int, S_IRUGO);
 
-static int change_process_state(void)
+static int __init init(void)
 {
     struct task_struct *p;
     for_each_process(p)
     {
         if(p->pid == pid)
         {
-            set_task_state(p, TASK_STOPPED);
+            p->state = TASK_STOPPED;
             return 0;
         }
     }
     return 0;
 }
 
-static void nothing(void)
+static void __exit exit(void)
 {
 }
 
-module_init(change_process_state);
-module_exit(nothing);
+module_init(init);
+module_exit(exit);
