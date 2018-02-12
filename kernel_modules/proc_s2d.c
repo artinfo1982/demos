@@ -13,12 +13,15 @@
  * 使用方法：
  * insmod ./proc_s2d.ko pid=xxxx delay=10  (表示D状态持续10秒后恢复为S状态)
  * rmmod proc_s2d.ko  (卸载内核模块)
+ * 
+ * 注意，在4.x的内核中，需要添加 #include <linux/sched/signal.h>，其他内核是否需要添加，请查阅for_each_process在哪个头文件中定义
  */
 
 #include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/sched.h>
+#include <linux/sched/signal.h>
 #include <linux/delay.h>
 
 MODULE_AUTHOR("ChenDong");
@@ -30,25 +33,25 @@ static int delay = -1;
 module_param(pid, int, S_IRUGO);
 module_param(delay, int, S_IRUGO);
 
-static int change_process_state(void)
+static int __init init(void)
 {
     struct task_struct *p;
     for_each_process(p)
     {
         if(p->pid == pid)
         {
-            set_task_state(p, TASK_UNINTERRUPTIBLE);
+            p->state = TASK_UNINTERRUPTIBLE;
             mdelay(delay * 1000);
-            set_task_state(p, TASK_INTERRUPTIBLE);
+            p->state = TASK_INTERRUPTIBLE;
             return 0;
         }
     }
     return 0;
 }
 
-static void nothing(void)
+static void __exit exit(void)
 {
 }
 
-module_init(change_process_state);
-module_exit(nothing);
+module_init(init);
+module_exit(exit);
