@@ -1,6 +1,7 @@
 车牌识别检测
 
 使用方法：
+```shell
 zxh@ubuntu:~/plr$ python test.py image/plate_01_苏D3Q520_蓝.jpg
 Using TensorFlow backend.
 [ INFO:0] Initialize OpenCL runtime...
@@ -31,3 +32,4 @@ Using TensorFlow backend.
 [ INFO:0] Initialize OpenCL runtime...
 车牌颜色：黄色
 车牌号码: 粤BN5982
+```
