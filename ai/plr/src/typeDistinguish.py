@@ -37,7 +37,6 @@ def Getmodel_tensorflow(nb_classes):
 
 model = Getmodel_tensorflow(5)
 model.load_weights("./model/plate_type.h5")
-model.save("./model/plate_type.h5")
 
 
 def SimplePredict(image):
