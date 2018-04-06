@@ -35,12 +35,12 @@ def lenet(train_lmdb, test_lmdb, train_batch_size, test_batch_size, output_path)
     n.loss = L.SoftmaxWithLoss(n.ip2, n.label, name='loss')
     n.acc = L.Accuracy(n.ip2, n.label, name='acc')
 
-    out_train_test = str('name: "LeNet_mnist_train_test"') + \
+    out_train_test = str('name: "LeNet_mnist_train_test"\n') + \
         str(ntest.to_proto()) + str(n.to_proto())
     with open(output_path + '/lenet_mnist_train_test.prototxt', 'w') as f:
         f.write(out_train_test)
 
-    out_deploy = str('name: "LeNet_mnist_deploy"') + str(n.to_proto())
+    out_deploy = str('name: "LeNet_mnist_deploy"\n') + str(n.to_proto())
     with open(output_path + '/lenet_mnist_deploy.prototxt', 'w') as f:
         f.write(out_deploy)
 
