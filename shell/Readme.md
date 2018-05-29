@@ -205,3 +205,8 @@ dd if=/dev/zero of=a bs=8K count=256K
 #磁盘读
 hdparm -Tt /dev/sda
 ```
+## tmpfs
+```shell
+#! /bin/bash
+mount tmpfs /opt/tmpfs -t tmpfs -o size=32G
+```
