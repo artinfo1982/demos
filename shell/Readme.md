@@ -16,7 +16,7 @@ expect {
 }
 expect eof
 ```
-## 从一个string的制定位置开始截取指定个数个字符
+## 从一个string的制定位置开始截取指定个数的字符
 ```shell
 #! /bin/bash
 function cutChars() {
@@ -57,7 +57,7 @@ function rand() {
 #生成1-10之间的随机整数
 rand 1 10
 ```
-## 获取CPU使用率
+## CPU使用率
 ```shell
 #! /bin/bash
 mpstat 1 1
@@ -69,4 +69,9 @@ mpstat 1 1
 date +%s
 #精确到纳秒
 date +%s.%N
+```
+## 磁盘读写速率
+```shell
+#! /bin/bash
+iostat -d -x -k 1 2
 ```
