@@ -48,3 +48,7 @@ create table user (
 sqlldr userid=userName/passwd@oracleIP:oraclePort/oracleSID control=test.ctl silent=header,feedback
 --如果有多个文件，可以多进程后台执行sqlldr
 ```
+## 检查用户表空间是否存在
+```sql
+select * from v$dbfie order by 1;
+```
