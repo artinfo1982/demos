@@ -1,4 +1,0 @@
-
-
-
-alter table XXX nologging;
