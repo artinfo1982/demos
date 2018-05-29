@@ -2,10 +2,8 @@
 ## Linux主机之间实现自动ssh访问
 ```shell
 #! /usr/bin/expect
-
 set ip [lindex $argv 0]
 set passwd [lindex $argv 1]
-
 spawn ssh root@${ip} "date"
 expect {
   "(yes/no)?" {
@@ -21,7 +19,6 @@ expect eof
 ## 从一个string的制定位置开始截取指定个数个字符
 ```shell
 #! /bin/bash
-
 function cutChars() {
         #输入字符串
         local s=$1
@@ -37,9 +34,7 @@ cutChars "abcdefg" 1 3
 ## 模拟吃CPU
 ```shell
 #! /bin/bash
-
 # 使用方法：./eatCpu.sh 期望吃掉的CPU核数
-
 for i in `seq $1`
 do
   echo -ne "
@@ -50,16 +45,10 @@ do
   done" | /bin/sh &
   pid_array[$i]=$!
 done
-
-for i in "${pid_array[@]}"
-do
-  echo "kill $i"
-done
 ```
 ## 生成指定范围内的随机整数
 ```shell
 #! /bin/bash
-
 function rand() {
         local beg=$1
         local end=$2
@@ -67,4 +56,9 @@ function rand() {
 }
 #生成1-10之间的随机整数
 rand 1 10
+```
+## 获取CPU使用率
+```shell
+#! /bin/bash
+mpstat 1 1
 ```
