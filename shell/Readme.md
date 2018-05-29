@@ -89,3 +89,8 @@ lspci | grep "Eth"
 #显卡
 lspci | grep "3D"
 ```
+## 网络流量统计
+```shell
+#! /bin/bash
+sar -n DEV 1 1
+```
