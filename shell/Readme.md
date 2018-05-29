@@ -56,3 +56,15 @@ do
   echo "kill $i"
 done
 ```
+## 生成指定范围内的随机整数
+```shell
+#! /bin/bash
+
+function rand() {
+        local beg=$1
+        local end=$2
+        echo $((RANDOM % $end + $beg))
+}
+#生成1-10之间的随机整数
+rand 1 10
+```
