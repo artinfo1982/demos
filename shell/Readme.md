@@ -75,3 +75,17 @@ date +%s.%N
 #! /bin/bash
 iostat -d -x -k 1 2
 ```
+## 显示硬件信息
+```shell
+#! /bin/bash
+#CPU
+lscpu
+#内存
+dmidecode -t memory
+#硬盘
+lsblk
+#网卡
+lspci | grep "Eth"
+#显卡
+lspci | grep "3D"
+```
