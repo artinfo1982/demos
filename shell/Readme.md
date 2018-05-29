@@ -18,3 +18,19 @@ expect {
 }
 expect eof
 ```
+## 从一个string的制定位置开始截取指定个数个字符
+```shell
+#! /bin/bash
+
+function cutChars() {
+        #输入字符串
+        local s=$1
+        #从哪一位字符开始，0表示第一个字符
+        local beg=$2
+        #向后截取几个字符
+        local num=$3
+        echo "${s:$beg:$num}"
+}
+#输出bcd
+cutChars "abcdefg" 1 3
+```
