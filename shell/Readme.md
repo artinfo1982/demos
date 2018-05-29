@@ -62,3 +62,11 @@ rand 1 10
 #! /bin/bash
 mpstat 1 1
 ```
+## 获取当前时间
+```shell
+#! /bin/bash
+#精确到秒
+date +%s
+#精确到纳秒
+date +%s.%N
+```
