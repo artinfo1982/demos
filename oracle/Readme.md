@@ -33,17 +33,17 @@ create table user (
   name varchar2(20)
 )
 --2. 创建一个文本文件test.txt，用于存放需要插入上表的数据
---cat test.txt
---1,张三
---2,李四
---3,王五
+  cat test.txt
+  1,张三
+  2,李四
+  3,王五
 --3. 创建一个控制文件test.ctl，用于控制sqlldr的行为
---cat test.ctl
---load data
---infile 'test.txt'
---insert into table user
---fields terminated by ","
---(id,name)
+  cat test.ctl
+  load data
+  infile 'test.txt'
+  insert into table user
+  fields terminated by ","
+  (id,name)
 --4. 在oracle用户下执行
 sqlldr userid=userName/passwd@oracleIP:oraclePort/oracleSID control=test.ctl silent=header,feedback
 --如果有多个文件，可以多进程后台执行sqlldr
