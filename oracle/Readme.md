@@ -52,3 +52,10 @@ sqlldr userid=userName/passwd@oracleIP:oraclePort/oracleSID control=test.ctl sil
 ```sql
 select * from v$dbfie order by 1;
 ```
+## 清理用户和表空间
+```sql
+--1. 删除用户的表空间
+drop tablespace XXX including contents and datafiles;
+--2. 删除用户及其关联项：
+drop user XXX cascade;
+```
