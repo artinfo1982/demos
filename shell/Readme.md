@@ -156,18 +156,6 @@ function B()
         fi
 }
 
-function C()
-{
-	local input="$1"
-	if [ "${input}" == "3" ]; then
-                echo "three"
-                exit 0
-        else
-                echo "error"
-                exit 1
-        fi
-}
-
 input_1="$1"
 input_2="$2"
 
@@ -180,11 +168,8 @@ fi
 case ${input_1} in
 	1) A ${input_2} ;;
 	2) B ${input_2} ;;
-	3) C ${input_2} ;;
 	*) echo "INVALID NUMBER!" ;;
 esac
-
-exit 0
 ```
 ## 使用tc模拟网络损伤
 ```shell
@@ -211,4 +196,12 @@ echo -e "abc" >&6
 cat <&6
 # 关闭链接
 exec 6>&-
+```
+## 磁盘读写性能测试
+```shell
+#! /bin/bash
+#磁盘写
+dd if=/dev/zero of=a bs=8K count=256K
+#磁盘读
+hdparm -Tt /dev/sda
 ```
