@@ -59,3 +59,55 @@ drop tablespace XXX including contents and datafiles;
 --2. 删除用户及其关联项：
 drop user XXX cascade;
 ```
+## oracle存储过程
+```sql
+CREATE OR REPLACE PROCEDURE XXX
+AS
+  --定义数组，如果是中文字符，注意每个占3个字节
+  type array is table of VARCHAR2(400);
+  test_array := array('人','口','手');
+  --变量定义
+  id VARCHAR2(8);
+  ...
+BEGIN
+  a := '1';
+  ...
+FOR i IN 1..10
+LOOP
+  --随i自增，共8位，左补0
+  id := lpad(i, 8, 0);
+  IF MOD(i, 2) = 0 THEN
+    ...
+  ELSE
+    ...
+  END IF;
+  
+  --2位大写字母+4个数字，U表示大写，X表示大写或者数字，随机整数：trunc(dbms_random.value(0, XXX))
+  b := dbms_random.string('U', 2) || lpad(trunc(dbms_random.value(0, 9999)), 4, 0);
+  --取数组元素
+  c := test_array(2);
+  
+  --if-else if
+  IF XX THEN
+    ...
+  ELSE IF XX THEN
+    ...
+  ELSE IF XX THEN
+    ...
+  END IF;
+  END IF;
+  END IF;
+  
+  --对于blob类型，假设d是blob类型
+  d := HEXTORAW('十六进制字符串');
+  
+  INSERT INTO XX values (id, xx, xx, ...);
+  
+  IF MOD(i, 10000) = 0 THEN
+    COMMIT;
+  END IF;
+END LOOP;
+COMMIT;
+
+END;
+```
