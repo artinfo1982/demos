@@ -48,3 +48,33 @@ source .bashrc
 cd ~/nnvm/python
 python setup.py install
 ```
+
+## 使用NNVM和TVM自定义算子
+```python
+import numpy as np
+import nnvm.symbol as sym
+import tvm
+import nnvm
+
+#以矩阵相乘为例，用tvm、nnvm的语法定义矩阵相乘
+#nnvm将该算子编译为三个输出文件：xx.so、xx.json、xx.params
+def matrix_mul(x, weight, units, lib_file, json_file, params_file):
+        _x = sym.Variable("x", shape=np.shape(x))
+        _w = sym.Variable("weight", shape=np.shape(weight))
+        _y = sym.dense(_x, _w, use_bias=False, units=units, name="dense")
+        dtype = tvm.float32
+        nx = tvm.nd.array(x.astype(dtype))
+        nw = tvm.nd.array(weight.astype(dtype))
+        params = {"weight": nw, "x": nx}
+        graph, lib, params = nnvm.compiler.build(_y, "llvm", shape={"x": nx.shape}, params=params)
+        lib.export_library(lib_file)
+        with open(json_file, "w") as fo:
+                fo.write(graph.json())
+        with open(params_file, "wb") as fo:
+                fo.write(nnvm.compiler.save_param_dict(params))
+
+if __name__ == '__main__':
+        A = np.random.uniform(size=(10, 10))
+        B = np.random.uniform(size=(1, 10))
+        matrix_mul(A, B, 1, "mul.so", "mul.json", "mul.params")
+```
