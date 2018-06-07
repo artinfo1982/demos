@@ -61,6 +61,7 @@ import nnvm
 def matrix_mul(x, weight, units, lib_file, json_file, params_file):
         _x = sym.Variable("x", shape=np.shape(x))
         _w = sym.Variable("weight", shape=np.shape(weight))
+        #借用nnvm中的线性回归算子，y=wx+b，让b不参与运算即达到了矩阵相乘的目的
         _y = sym.dense(_x, _w, use_bias=False, units=units, name="dense")
         dtype = tvm.float32
         nx = tvm.nd.array(x.astype(dtype))
