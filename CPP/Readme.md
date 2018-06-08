@@ -90,3 +90,11 @@ int main()
     return 0;
 }
 ```
+模板还支持模板参数和基本数据类型的混搭：
+```C++
+template<typename T, int MAXSIZE>
+class Stack{
+Private:
+    T elems[MAXSIZE];
+};
+```
