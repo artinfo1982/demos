@@ -61,3 +61,18 @@ use goto
 ---A(2, 1)---
 hello
 ```
+
+## struct的成员前面使用点（.）
+```C
+struct point
+{
+        int x, y;
+};
+struct point p = 
+{
+        .y = yvalue,
+        .x = xvalue
+};
+```
+这是GCC扩展，详见：
+http://gcc.gnu.org/onlinedocs/gcc/Designated-Inits.html
