@@ -64,15 +64,21 @@ hello
 
 ## struct的成员前面使用点（.）
 ```C
-struct point
-{
+struct point {
         int x, y;
 };
-struct point p = 
-{
+struct point p = {
         .y = yvalue,
         .x = xvalue
 };
 ```
-这是GCC扩展，详见：
-http://gcc.gnu.org/onlinedocs/gcc/Designated-Inits.html
+这是GCC扩展，用于结构体成员的初始化。详见：
+http://gcc.gnu.org/onlinedocs/gcc/Designated-Inits.html   
+结构体数组也可以使用类似的方法：
+```C
+struct point ptarray[10] = {
+        [2].y = yv2, 
+        [2].x = xv2, 
+        [0].x = xv0
+};
+```
