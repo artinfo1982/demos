@@ -5,8 +5,7 @@ goto用于跳转到某个特定的区域执行某些特定的代码，比如下�
 ```C
 #include <stdio.h>
 
-void A(int a, int b)
-{
+void A(int a, int b) {
         if (a < b)
                 goto out;
         printf("hello\n");
@@ -14,8 +13,7 @@ out:
         printf("use goto\n");
 }
 
-int main()
-{
+int main() {
         printf("---A(1, 2)---\n");
         A(1, 2);
         printf("---A(2, 1)---\n");
@@ -35,8 +33,7 @@ use goto
 ```C
 #include <stdio.h>
 
-void A(int a, int b)
-{
+void A(int a, int b) {
         if (a < b)
                 goto out;
         printf("hello\n");
@@ -45,8 +42,7 @@ out:
         printf("use goto\n");
 }
 
-int main()
-{
+int main() {
         printf("---A(1, 2)---\n");
         A(1, 2);
         printf("---A(2, 1)---\n");
