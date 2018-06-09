@@ -54,3 +54,10 @@ int main()
         return 0;
 }
 ```
+输出为：
+```text
+---A(1, 2)---
+use goto
+---A(2, 1)---
+hello
+```
