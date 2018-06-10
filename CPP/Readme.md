@@ -124,4 +124,23 @@ void increment(int& i) {
     i++;
 }
 ```
-函数返回值的引用比较复杂
+函数返回值的引用
+```C++
+int& A() {...}
+int B() {...}
+const int& a = A(); // 编译器不会给返回值临时分配内存
+const int& b = B(); // 编译器给返回值临时分配一块内存
+```
+千万不要返回局部对象的引用，会使引用指向不确定的地址
+```C++
+const string &A(const string &s) {  
+	string ret=s; // ret是局部变量，函数执行完，其地址也释放
+	return ret; // 错误，返回它的引用会产生类似野指针的效果
+}
+```
+返回形参的引用
+```C++
+const string &B(const string &s) {  
+	return s;  
+}  
+```
