@@ -98,3 +98,16 @@ Private:
     T elems[MAXSIZE];
 };
 ```
+
+## 0和NULL
+C里常使用NULL表示空指针，C++建议直接使用0，如果一定要使用NULL，请这样定义 const int NULL = 0;
+
+## 变长数组
+通常数组定义时需要指定其大小，如果想定义变长数组，请使用vector，例如：
+```C++
+int size;
+vector<int> v(size);
+```
+
+## 引用
+引用的目的在于描述函数的参数和返回值，特别是为了运算符的重载。
