@@ -7,7 +7,7 @@ create user 'cd'@'%' identified by 'huawei';
 
 ## 创建数据库
 ```sql
-create database cddb DEFAULT CHARSET utf8 COLLATE utf8_general_ci;
+create database if not exists cddb DEFAULT CHARSET utf8 COLLATE utf8_general_ci;
 ```
 
 ## 给用户操作数据库的权限
