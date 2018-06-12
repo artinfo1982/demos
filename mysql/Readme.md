@@ -126,16 +126,24 @@ BEGIN
     DECLARE v_datetime DATETIME;
     DECLARE v_blob BLOB;
     
+    -- 大小写+数字的字母集合，供后续的随机字符串使用
     DECLARE v_Aa0 char(62) default 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     
     SET i = 1;
     WHILE i <= 10 DO
+    	-- 100以内的随机数，包含小数
         SELECT RAND()*100 into v_float;
+	-- 100以内的随机数，包含小数
 	SELECT RAND()*100 into v_double;
+	-- 随机生成一位字符
 	SET v_char = SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1);
+	-- 随机生成6位字符串（包含大小写），其实就是6个单一字符的生成函数的拼装
 	SET v_varchar = CONCAT(SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1),SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1),SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1),SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1),SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1),SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1));
+	-- 获取当前日期，yyyy-MM-dd
 	SET v_date = CURDATE();
+	-- 获取当前日期+时间，yyyy-MM-dd HH:mm:ss
 	SET v_datetime = SYSDATE();
+	-- blob类型变量的使用，具体内容可以替换为图片，和oracle类似
 	SET v_blob = HEX('H6rxHQ1dgA');
 	INSERT INTO cd_tb_test values(i, v_float, v_double, v_char, v_varchar, v_date, v_datetime, v_blob);
 	SET i = i + 1;
