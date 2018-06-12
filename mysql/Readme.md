@@ -106,12 +106,13 @@ mysql> desc cd_tb_test;
 | v_float    | float(5,2)       | YES  |     | NULL    |                |
 | v_double   | double(5,2)      | YES  |     | NULL    |                |
 | v_char     | char(1)          | YES  |     | NULL    |                |
-| v_varchar  | varchar(64)      | NO   |     | NULL    |                |
+| v_vchar1   | varchar(64)      | NO   |     | NULL    |                |
+| v_vchar2   | varchar(64)      | NO   |     | NULL    |                |
 | v_date     | date             | YES  |     | NULL    |                |
 | v_datetime | datetime         | YES  |     | NULL    |                |
 | v_blob     | blob             | YES  |     | NULL    |                |
 +------------+------------------+------+-----+---------+----------------+
-8 rows in set (0.01 sec)
+9 rows in set (0.01 sec)
 ```
 
 ## mysql存储过程示例
@@ -122,7 +123,8 @@ BEGIN
     DECLARE v_float FLOAT(5, 2);
     DECLARE v_double DOUBLE(5, 2);
     DECLARE v_char CHAR(1);
-    DECLARE v_varchar VARCHAR(64);
+    DECLARE v_vchar1 VARCHAR(64);
+    DECLARE v_vchar2 VARCHAR(64);
     DECLARE v_date DATE;
     DECLARE v_datetime DATETIME;
     DECLARE v_blob BLOB;
@@ -139,14 +141,14 @@ BEGIN
 	-- 随机生成一位字符
 	SET v_char = SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1);
 	-- 随机生成6位字符串（包含大小写），其实就是6个单一字符的生成函数的拼装
-	SET v_varchar = CONCAT(SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1),SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1),SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1),SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1),SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1),SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1));
+	SET v_vchar1 = CONCAT(SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1),SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1),SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1),SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1),SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1),SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1));
 	-- 获取当前日期，yyyy-MM-dd
 	SET v_date = CURDATE();
 	-- 获取当前日期+时间，yyyy-MM-dd HH:mm:ss
 	SET v_datetime = SYSDATE();
 	-- blob类型变量的使用，具体内容可以替换为图片，和oracle类似
 	SET v_blob = HEX('H6rxHQ1dgA');
-	INSERT INTO cd_tb_test values(i, v_float, v_double, v_char, v_varchar, v_date, v_datetime, v_blob);
+	INSERT INTO cd_tb_test values(i, v_float, v_double, v_char, v_vchar1, v_date, v_datetime, v_blob);
 	SET i = i + 1;
     END WHILE;
 END;
