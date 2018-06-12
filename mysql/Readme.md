@@ -73,7 +73,8 @@ create table if not exists cd_tb_test
 	-- 双精度浮点，共5位有效数字，其中2位小数，最后一位四舍五入
 	v_double DOUBLE(5, 2),
 	v_char CHAR(1),
-	v_varchar VARCHAR(64) NOT NULL,
+	v_vchar1 VARCHAR(64) NOT NULL,
+	v_vchar2 VARCHAR(64) NOT NULL,
 	-- 日期，yyyy-MM-dd
 	v_date DATE,
 	-- 日期+时间，yyyy-MM-dd HH:mm:ss
@@ -151,4 +152,4 @@ BEGIN
 END;
 ```
 使用mysql-front，在数据库上右键“新建”-->“过程”，将存储过程copy进去。   
-使用存储过程的时候，右键点击存储过程，选择“打开一个新的窗口”，点击绿色“运行”按钮。
+使用存储过程的时候，右键点击存储过程，选择“打开一个新的窗口”或者“打开一个新的标签页”，点击绿色“运行”按钮。
