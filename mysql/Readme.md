@@ -117,29 +117,30 @@ mysql> desc cd_tb_test;
 ```sql
 CREATE DEFINER=`cd`@`%` PROCEDURE `cd_proc_test`()
 BEGIN
-	DECLARE i INT UNSIGNED;
-	DECLARE v_float FLOAT(5, 2);
-	DECLARE v_double DOUBLE(5, 2);
-	DECLARE v_char CHAR(1);
-	DECLARE v_varchar VARCHAR(64);
-	DECLARE v_date DATE;
-	DECLARE v_datetime DATETIME;
-	DECLARE v_blob BLOB;
-	
-	DECLARE v_Aa0 char(62) default 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-
-	SET i = 1;
-	WHILE i <= 10 DO
-		SELECT RAND()*100 into v_float;
-		SELECT RAND()*100 into v_double;
-		SET v_char = SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1);
-		SET v_varchar = CONCAT(SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1),SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1),SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1),SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1),SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1),SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1));
-		SET v_date = CURDATE();
-		SET v_datetime = SYSDATE();
-		SET v_blob = HEX('H6rxHQ1dgA');
-		INSERT INTO cd_tb_test values(i, v_float, v_double, v_char, v_varchar, v_date, v_datetime, v_blob);
-		SET i = i + 1;
-	END WHILE;
+    DECLARE i INT UNSIGNED;
+    DECLARE v_float FLOAT(5, 2);
+    DECLARE v_double DOUBLE(5, 2);
+    DECLARE v_char CHAR(1);
+    DECLARE v_varchar VARCHAR(64);
+    DECLARE v_date DATE;
+    DECLARE v_datetime DATETIME;
+    DECLARE v_blob BLOB;
+    
+    DECLARE v_Aa0 char(62) default 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    
+    SET i = 1;
+    WHILE i <= 10 DO
+        SELECT RAND()*100 into v_float;
+	SELECT RAND()*100 into v_double;
+	SET v_char = SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1);
+	SET v_varchar = CONCAT(SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1),SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1),SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1),SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1),SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1),SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1));
+	SET v_date = CURDATE();
+	SET v_datetime = SYSDATE();
+	SET v_blob = HEX('H6rxHQ1dgA');
+	INSERT INTO cd_tb_test values(i, v_float, v_double, v_char, v_varchar, v_date, v_datetime, v_blob);
+	SET i = i + 1;
+    END WHILE;
 END;
-
 ```
+使用mysql-front，在数据库上右键“新建”-->“过程”，将存储过程copy进去。   
+使用存储过程的时候，右键点击存储过程，选择“打开一个新的窗口”，点击绿色“运行”按钮。
