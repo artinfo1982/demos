@@ -112,3 +112,34 @@ mysql> desc cd_tb_test;
 +------------+------------------+------+-----+---------+----------------+
 8 rows in set (0.01 sec)
 ```
+
+## mysql存储过程示例
+```sql
+CREATE DEFINER=`cd`@`%` PROCEDURE `cd_proc_test`()
+BEGIN
+	DECLARE i INT UNSIGNED;
+	DECLARE v_float FLOAT(5, 2);
+	DECLARE v_double DOUBLE(5, 2);
+	DECLARE v_char CHAR(1);
+	DECLARE v_varchar VARCHAR(64);
+	DECLARE v_date DATE;
+	DECLARE v_datetime DATETIME;
+	DECLARE v_blob BLOB;
+	
+	DECLARE v_Aa0 char(62) default 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+
+	SET i = 1;
+	WHILE i <= 10 DO
+		SELECT RAND()*100 into v_float;
+		SELECT RAND()*100 into v_double;
+		SET v_char = SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1);
+		SET v_varchar = CONCAT(SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1),SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1),SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1),SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1),SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1),SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1));
+		SET v_date = CURDATE();
+		SET v_datetime = SYSDATE();
+		SET v_blob = HEX('H6rxHQ1dgA');
+		INSERT INTO cd_tb_test values(i, v_float, v_double, v_char, v_varchar, v_date, v_datetime, v_blob);
+		SET i = i + 1;
+	END WHILE;
+END;
+
+```
