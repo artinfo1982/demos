@@ -130,14 +130,18 @@ BEGIN
     DECLARE v_blob BLOB;
     
     -- 大小写+数字的字母集合，供后续的随机字符串使用
-    DECLARE v_Aa0 char(62) default 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    DECLARE v_Aa0 CHAR(62) DEFAULT 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    -- 定义英文字符串数组
+    DECLARE v_array_eng VARCHAR(16) DEFAULT 'aaa bbb ccc';
+    -- 定义中文单词数组
+    DECLARE v_array_chn VARCHAR(64) DEFAULT '中国 韩国 日本';
     
     SET i = 1;
     WHILE i <= 10 DO
     	-- 100以内的随机数，包含小数
-        SELECT RAND()*100 into v_float;
+        SELECT RAND()*100 INTO v_float;
 	-- 100以内的随机数，包含小数
-	SELECT RAND()*100 into v_double;
+	SELECT RAND()*100 INTO v_double;
 	-- 随机生成一位字符
 	SET v_char = SUBSTRING(v_Aa0,1+FLOOR(RAND()*61),1);
 	-- 随机生成6位字符串（包含大小写），其实就是6个单一字符的生成函数的拼装
@@ -148,10 +152,36 @@ BEGIN
 	SET v_datetime = SYSDATE();
 	-- blob类型变量的使用，具体内容可以替换为图片，和oracle类似
 	SET v_blob = HEX('H6rxHQ1dgA');
-	INSERT INTO cd_tb_test values(i, v_float, v_double, v_char, v_vchar1, v_date, v_datetime, v_blob);
+	IF MOD(i, 2) = 0 THEN
+	    -- 轮询抽取英文数组中的元素，以空格为分隔符
+	    SET v_vchar2 = SUBSTRING_INDEX(SUBSTRING_INDEX(v_array_eng, ' ', MOD(i, 3) + 1),' ',-1);
+	ELSE
+	    -- 轮询抽取中文数组中的元素，以空格为分隔符
+	    SET v_vchar2 = SUBSTRING_INDEX(SUBSTRING_INDEX(v_array_chn, ' ', MOD(i, 3) + 1),' ',-1);
+	END IF;
+	INSERT INTO cd_tb_test values(i, v_float, v_double, v_char, v_vchar1, v_vchar2, v_date, v_datetime, v_blob);
 	SET i = i + 1;
     END WHILE;
 END;
 ```
 使用mysql-front，在数据库上右键“新建”-->“过程”，将存储过程copy进去。   
-使用存储过程的时候，右键点击存储过程，选择“打开一个新的窗口”或者“打开一个新的标签页”，点击绿色“运行”按钮。
+使用存储过程的时候，右键点击存储过程，选择“打开一个新的窗口”或者“打开一个新的标签页”，点击绿色“运行”按钮。   
+执行上述存储过程后，查询表：
+```text
+mysql> select * from cd_tb_test;
++------+---------+----------+--------+----------+----------+------------+---------------------+----------------------+
+| v_id | v_float | v_double | v_char | v_vchar1 | v_vchar2 | v_date     | v_datetime          | v_blob               |
++------+---------+----------+--------+----------+----------+------------+---------------------+----------------------+
+|    1 |   81.71 |    68.94 | 8      | 3IfTEn   | 韩国     | 2018-06-12 | 2018-06-12 22:13:08 | 48367278485131646741 |
+|    2 |   60.07 |    35.27 | 6      | T0dSBf   | ccc      | 2018-06-12 | 2018-06-12 22:13:08 | 48367278485131646741 |
+|    3 |    8.07 |    13.57 | A      | VIEYMM   | 中国     | 2018-06-12 | 2018-06-12 22:13:08 | 48367278485131646741 |
+|    4 |   29.73 |    58.62 | c      | Ad8XcX   | bbb      | 2018-06-12 | 2018-06-12 22:13:08 | 48367278485131646741 |
+|    5 |   92.51 |    18.44 | i      | kCUzVQ   | 日本     | 2018-06-12 | 2018-06-12 22:13:08 | 48367278485131646741 |
+|    6 |    8.94 |    38.04 | M      | boh4nu   | aaa      | 2018-06-12 | 2018-06-12 22:13:08 | 48367278485131646741 |
+|    7 |    5.25 |    23.01 | 8      | qyjJDL   | 韩国     | 2018-06-12 | 2018-06-12 22:13:08 | 48367278485131646741 |
+|    8 |   66.72 |    47.67 | x      | DpZAM1   | ccc      | 2018-06-12 | 2018-06-12 22:13:08 | 48367278485131646741 |
+|    9 |   47.72 |    75.93 | w      | HMHYGi   | 中国     | 2018-06-12 | 2018-06-12 22:13:08 | 48367278485131646741 |
+|   10 |    9.11 |     4.97 | 7      | SRxUPh   | bbb      | 2018-06-12 | 2018-06-12 22:13:08 | 48367278485131646741 |
++------+---------+----------+--------+----------+----------+------------+---------------------+----------------------+
+10 rows in set (0.00 sec)
+```
