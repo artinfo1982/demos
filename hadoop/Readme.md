@@ -20,9 +20,5 @@ cp ~/hadoop-3.0.3/etc/hadoop/*.xml ~/input
         <name>fs.defaultFS</name>
         <value>hdfs://192.168.1.1:9000</value>
     </property>
-    <property>
-        <name>hadoop.tmp.dir</name>
-        <value>file://~/hadoop-3.0.3/tmp</value>
-    </property>
 </configuration>
 ```
