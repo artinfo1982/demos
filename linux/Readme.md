@@ -8,3 +8,7 @@
 5. exit
 6. 重启
 ```
+## linux挂载远程windows服务器的路径
+```shell
+mount -t cifs -o username=xx,password=xx //192.168.1.1/test /opt/aaa
+```
