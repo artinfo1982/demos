@@ -12,3 +12,16 @@
 ```shell
 mount -t cifs -o username=xx,password=xx //192.168.1.1/test /opt/aaa
 ```
+## sendmail
+```text
+1. 配置mail.rc
+set asksub append dot save crt=20
+ignore Received Message-Id Resent-Message-Id Status Mail-From Return-Path Via
+set from = 发件人邮箱地址
+set smtp = mail.huawei.com
+set smtp-auth-user = XXXX
+set smtp-auth-password = XXXX
+set smtp-auth = login
+
+2.echo "aa" | mail -s "bb" aa@126.com,bb@gmail.com
+```
