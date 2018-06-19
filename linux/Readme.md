@@ -23,5 +23,5 @@ set smtp-auth-user = XXXX
 set smtp-auth-password = XXXX
 set smtp-auth = login
 
-2.echo "aa" | mail -s "bb" aa@126.com,bb@gmail.com
+2.echo "邮件正文" | mail -s "邮件标题" aa@126.com,bb@gmail.com
 ```
