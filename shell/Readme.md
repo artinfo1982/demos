@@ -210,3 +210,9 @@ hdparm -Tt /dev/sda
 #! /bin/bash
 mount tmpfs /opt/tmpfs -t tmpfs -o size=32G
 ```
+## 使用python解析curl返回的json
+```shell
+#! /bin/bash
+#假设curl返回的json结构为：{"data":"123"}
+curl -s "http://192.168.1.1:50000/a" | python -c "import json,sys;obj=json.load(sys.stdin);print obj['data']"
+```
