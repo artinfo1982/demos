@@ -51,6 +51,10 @@ mkdir -p /home/hadoop/hadoop-3.0.3/hdfs/data
         <name>dfs.datanode.data.dir</name>
         <value>file:/home/hadoop/hadoop-3.0.3/hdfs/data</value>
     </property>
+    <property>
+        <name>dfs.http.address</name>
+        <value>192.168.1.1:50070</value>
+    </property>
 </configuration>
 ```
 (7)修改 /home/hadoop/hadoop-3.0.3/etc/hadoop/mapred-site.xml
