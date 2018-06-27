@@ -14,17 +14,32 @@ import time
 import os
 
 from caffe2.python import core, workspace, experiment_util, data_parallel_model
-from caffe2.python import data_parallel_model_utils, dyndep, optimizer
+from caffe2.python import dyndep, optimizer
 from caffe2.python import timeout_guard, model_helper, brew
 from caffe2.proto import caffe2_pb2
 
 import caffe2.python.models.resnet as resnet
-from caffe2.python.modeling.initializers import Initializer, pFP16Initializer
+from caffe2.python.modeling.initializers import Initializer, PseudoFP16Initializer
 import caffe2.python.predictor.predictor_exporter as pred_exp
 import caffe2.python.predictor.predictor_py_utils as pred_utils
 from caffe2.python.predictor_constants import predictor_constants as predictor_constants
-from caffe2.python.predictor import mobile_exporter
 
+'''
+Parallelized multi-GPU distributed trainer for Resnet 50. Can be used to train
+on imagenet data, for example.
+
+To run the trainer in single-machine multi-gpu mode by setting num_shards = 1.
+
+To run the trainer in multi-machine multi-gpu mode with M machines,
+run the same program on all machines, specifying num_shards = M, and
+shard_id = a unique integer in the set [0, M-1].
+
+For rendezvous (the trainer processes have to know about each other),
+you can either use a directory path that is visible to all processes
+(e.g. NFS directory), or use a Redis instance. Use the former by
+passing the `file_store_path` argument. Use the latter by passing the
+`redis_host` and `redis_port` arguments.
+'''
 
 logging.basicConfig()
 log = logging.getLogger("resnet50_trainer")
@@ -35,6 +50,10 @@ dyndep.InitOpsLibrary('@/caffe2/caffe2/distributed:redis_store_handler_ops')
 
 
 def AddImageInput(model, reader, batch_size, img_size, dtype, is_test):
+    '''
+    The image input operator loads image and label data from the reader and
+    applies transformations to the images (random cropping, mirroring, ...).
+    '''
     data, label = brew.image_input(
         model,
         reader, ["data", "label"],
@@ -49,10 +68,16 @@ def AddImageInput(model, reader, batch_size, img_size, dtype, is_test):
         mirror=1,
         is_test=is_test,
     )
+
     data = model.StopGradient(data, data)
 
 
 def AddNullInput(model, reader, batch_size, img_size, dtype):
+    '''
+    The null input function uses a gaussian fill operator to emulate real image
+    input. A label blob is hardcoded to a single value. This is useful if you
+    want to test compute throughput or don't have a dataset available.
+    '''
     suffix = "_fp16" if dtype == "float16" else ""
     model.param_init_net.GaussianFill(
         [],
@@ -71,16 +96,40 @@ def AddNullInput(model, reader, batch_size, img_size, dtype):
     )
 
 
-def SaveModel(workspace, train_model):
-    init_net, predict_net = mobile_exporter.Export(
-        workspace, train_model.net, train_model.params)
-    with open('/home/zxh/tmp/resnet50_init_net.pb', 'wb') as f:
-        f.write(init_net.SerializeToString())
-    with open('/home/zxh/tmp/resnet50_predict_net.pb', 'wb') as f:
-        f.write(predict_net.SerializeToString())
+def SaveModel(args, train_model, epoch):
+    prefix = "[]_{}".format(train_model._device_prefix, train_model._devices[0])
+    predictor_export_meta = pred_exp.PredictorExportMeta(
+        predict_net=train_model.net.Proto(),
+        parameters=data_parallel_model.GetCheckpointParams(train_model),
+        inputs=[prefix + "/data"],
+        outputs=[prefix + "/softmax"],
+        shapes={
+            prefix + "/softmax": (1, args.num_labels),
+            prefix + "/data": (args.num_channels, args.image_size, args.image_size)
+        }
+    )
+
+    # save the train_model for the current epoch
+    model_path = "%s/%s_%d.mdl" % (
+        args.file_store_path,
+        args.save_model_name,
+        epoch,
+    )
+
+    # set db_type to be "minidb" instead of "log_file_db", which breaks
+    # the serialization in save_to_db. Need to switch back to log_file_db
+    # after migration
+    pred_exp.save_to_db(
+        db_type="minidb",
+        db_destination=model_path,
+        predictor_export_meta=predictor_export_meta,
+    )
 
 
 def LoadModel(path, model):
+    '''
+    Load pretrained model from file
+    '''
     log.info("Loading path: {}".format(path))
     meta_net_def = pred_exp.load_from_db(path, 'minidb')
     init_net = core.Net(pred_utils.GetNet(
@@ -91,6 +140,10 @@ def LoadModel(path, model):
     predict_init_net.RunAllOnGPU()
     init_net.RunAllOnGPU()
 
+    assert workspace.RunNetOnce(predict_init_net)
+    assert workspace.RunNetOnce(init_net)
+
+    # Hack: fix iteration counter which is in CUDA context after load model
     itercnt = workspace.FetchBlob("optimizer_iteration")
     workspace.FeedBlob(
         "optimizer_iteration",
@@ -109,9 +162,16 @@ def RunEpoch(
     expname,
     explog,
 ):
+    '''
+    Run one epoch of the trainer.
+    TODO: add checkpointing here.
+    '''
+    # TODO: add loading from checkpoint
     log.info("Starting epoch {}/{}".format(epoch, args.num_epochs))
     epoch_iters = int(args.epoch_size / total_batch_size / num_shards)
     for i in range(epoch_iters):
+        # This timeout is required (temporarily) since CUDA-NCCL
+        # operators might deadlock when synchronizing between GPUs.
         timeout = 600.0 if i == 0 else 60.0
         with timeout_guard.CompleteInTimeOrDie(timeout):
             t1 = time.time()
@@ -130,8 +190,7 @@ def RunEpoch(
         log.info(train_fmt.format(loss, accuracy))
 
     num_images = epoch * epoch_iters * total_batch_size
-    prefix = "{}_{}".format(train_model._device_prefix,
-                            train_model._devices[0])
+    prefix = "{}_{}".format(train_model._device_prefix, train_model._devices[0])
     accuracy = workspace.FetchBlob(prefix + '/accuracy')
     loss = workspace.FetchBlob(prefix + '/loss')
     learning_rate = workspace.FetchBlob(
@@ -164,6 +223,8 @@ def RunEpoch(
         }
     )
     assert loss < 40, "Exploded gradients :("
+
+    # TODO: add checkpointing
     return epoch + 1
 
 
@@ -181,12 +242,22 @@ def Train(args):
     # Verify valid batch size
     total_batch_size = args.batch_size
     batch_per_device = total_batch_size // num_gpus
+    assert \
+        total_batch_size % num_gpus == 0, \
+        "Number of GPUs must divide batch size"
 
+    # Round down epoch size to closest multiple of batch size across machines
     global_batch_size = total_batch_size * args.num_shards
     epoch_iters = int(args.epoch_size / global_batch_size)
+
+    assert \
+        epoch_iters > 0, \
+        "Epoch size must be larger than batch size times shard count"
+
     args.epoch_size = epoch_iters * global_batch_size
     log.info("Using epoch size: {}".format(args.epoch_size))
 
+    # Create ModelHelper object
     train_arg_scope = {
         'order': 'NCHW',
         'use_cudnn': True,
@@ -199,8 +270,13 @@ def Train(args):
 
     num_shards = args.num_shards
     shard_id = args.shard_id
+
+    # Expect interfaces to be comma separated.
+    # Use of multiple network interfaces is not yet complete,
+    # so simply use the first one in the list.
     interfaces = args.distributed_interfaces.split(",")
 
+    # Rendezvous using MPI when run with mpirun
     if os.getenv("OMPI_COMM_WORLD_SIZE") is not None:
         num_shards = int(os.getenv("OMPI_COMM_WORLD_SIZE", 1))
         shard_id = int(os.getenv("OMPI_COMM_WORLD_RANK", 0))
@@ -216,8 +292,10 @@ def Train(args):
                 exit_nets=None)
 
     elif num_shards > 1:
+        # Create rendezvous for distributed computation
         store_handler = "store_handler"
         if args.redis_host is not None:
+            # Use Redis for rendezvous if Redis host is specified
             workspace.RunOperatorOnce(
                 core.CreateOperator(
                     "RedisStoreHandlerCreate", [], [store_handler],
@@ -227,6 +305,7 @@ def Train(args):
                 )
             )
         else:
+            # Use filesystem for rendezvous otherwise
             workspace.RunOperatorOnce(
                 core.CreateOperator(
                     "FileStoreHandlerCreate", [], [store_handler],
@@ -247,8 +326,9 @@ def Train(args):
     else:
         rendezvous = None
 
+    # Model building functions
     def create_resnet50_model_ops(model, loss_scale):
-        initializer = (pFP16Initializer if args.dtype == 'float16'
+        initializer = (PseudoFP16Initializer if args.dtype == 'float16'
                        else Initializer)
 
         with brew.arg_scope([brew.conv, brew.fc],
@@ -278,12 +358,13 @@ def Train(args):
         stepsz = int(30 * args.epoch_size / total_batch_size / num_shards)
 
         if args.float16_compute:
+            # TODO: merge with multi-prceision optimizer
             opt = optimizer.build_fp16_sgd(
                 model,
                 args.base_learning_rate,
                 momentum=0.9,
                 nesterov=1,
-                weight_decay=args.weight_decay,
+                weight_decay=args.weight_decay,   # weight decay included
                 policy="step",
                 stepsize=stepsz,
                 gamma=0.1
@@ -301,6 +382,9 @@ def Train(args):
             )
         return opt
 
+    # Define add_image_input function.
+    # Depends on the "train_data" argument.
+    # Note that the reader will be shared with between all GPUS.
     if args.train_data == "null":
         def add_image_input(model):
             AddNullInput(
@@ -330,6 +414,7 @@ def Train(args):
             )
 
     def add_post_sync_ops(model):
+        """Add ops applied after initial parameter sync."""
         for param_info in model.GetOptimizationParamInfo(model.GetParams()):
             if param_info.blob_copy is not None:
                 model.param_init_net.HalfToFloat(
@@ -337,6 +422,7 @@ def Train(args):
                     param_info.blob_copy[core.DataType.FLOAT]
                 )
 
+    # Create parallelized model
     data_parallel_model.Parallelize(
         train_model,
         input_builder_fun=add_image_input,
@@ -348,21 +434,15 @@ def Train(args):
         optimize_gradient_memory=False,
         cpu_device=args.use_cpu,
         shared_model=args.use_cpu,
+        combine_spatial_bn=args.use_cpu,
     )
-
-    if args.model_parallel:
-        activations = data_parallel_model_utils.GetActivationBlobs(train_model)
-        data_parallel_model_utils.ShiftActivationDevices(
-            train_model,
-            activations=activations[len(activations) // 2:],
-            shifts={g: args.num_gpus + g for g in range(args.num_gpus)},
-        )
 
     data_parallel_model.OptimizeGradientMemory(train_model, {}, set(), False)
 
     workspace.RunNetOnce(train_model.param_init_net)
     workspace.CreateNet(train_model.net)
 
+    # Add test model, if specified
     test_model = None
     if (args.test_data is not None):
         log.info("----- Create test net ----")
@@ -404,9 +484,15 @@ def Train(args):
         workspace.CreateNet(test_model.net)
 
     epoch = 0
+    # load the pre-trained model and reset epoch
     if args.load_model_path is not None:
         LoadModel(args.load_model_path, train_model)
+
+        # Sync the model params
         data_parallel_model.FinalizeAfterCheckpoint(train_model)
+
+        # reset epoch. load_model_path should end with *_X.mdl,
+        # where X is the epoch number
         last_str = args.load_model_path.split('_')[-1]
         if last_str.endswith('.mdl'):
             epoch = int(last_str[:-4])
@@ -420,8 +506,10 @@ def Train(args):
         args.num_labels,
         args.base_learning_rate,
     )
+
     explog = experiment_util.ModelTrainerLog(expname, args)
 
+    # Run the training one epoch a time
     while epoch < args.num_epochs:
         epoch = RunEpoch(
             args,
@@ -433,13 +521,23 @@ def Train(args):
             expname,
             explog
         )
-    # final save
-    SaveModel(workspace, train_model)
+
+        # Save the model for each epoch
+        SaveModel(args, train_model, epoch)
+
+        model_path = "%s/%s_" % (
+            args.file_store_path,
+            args.save_model_name
+        )
+        # remove the saved model from the previous epoch if it exists
+        if os.path.isfile(model_path + str(epoch - 1) + ".mdl"):
+            os.remove(model_path + str(epoch - 1) + ".mdl")
 
 
 def main():
+    # TODO: use argv
     parser = argparse.ArgumentParser(
-        description="Caffe2: resnet50 training"
+        description="Caffe2: Resnet-50 training"
     )
     parser.add_argument("--train_data", type=str, default=None, required=True,
                         help="Path to training data (or 'null' to simulate)")
@@ -451,8 +549,6 @@ def main():
                         help="Comma separated list of GPU devices to use")
     parser.add_argument("--num_gpus", type=int, default=1,
                         help="Number of GPU devices (instead of --gpus)")
-    parser.add_argument("--model_parallel", type=bool, default=False,
-                        help="Split model over 2 x num_gpus")
     parser.add_argument("--num_channels", type=int, default=3,
                         help="Number of color channels")
     parser.add_argument("--image_size", type=int, default=227,
@@ -494,15 +590,16 @@ def main():
                         help='Data type used for training')
     parser.add_argument('--float16_compute', action='store_true',
                         help="Use float 16 compute, if available")
-    parser.add_argument('--enable-tensor-core', action='store_true',
+    parser.add_argument('--enable_tensor_core', action='store_true',
                         help='Enable Tensor Core math for Conv and FC ops')
     parser.add_argument("--distributed_transport", type=str, default="tcp",
                         help="Transport to use for distributed run [tcp|ibverbs]")
     parser.add_argument("--distributed_interfaces", type=str, default="",
                         help="Network interfaces to use for distributed run")
-    args = parser.parse_args()
-    Train(args)
 
+    args = parser.parse_args()
+
+    Train(args)
 
 if __name__ == '__main__':
     workspace.GlobalInit(['caffe2', '--caffe2_log_level=2'])
