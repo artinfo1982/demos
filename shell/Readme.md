@@ -220,5 +220,6 @@ curl -s "http://192.168.1.1:50000/a" | python -c "import json,sys;obj=json.load(
 ```
 ## 生成自增序列，左补零
 ```shell
+#例如下例，会生成 001 002 ... 100
 seq -w 1 100
 ```
