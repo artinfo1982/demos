@@ -16,7 +16,7 @@ expect {
 }
 expect eof
 ```
-## 从一个string的制定位置开始截取指定个数的字符
+## 从一个string的指定位置开始截取指定个数的字符
 ```shell
 #! /bin/bash
 function cutChars() {
@@ -69,6 +69,8 @@ mpstat 1 1
 date +%s
 #精确到纳秒
 date +%s.%N
+#格式为 2018-01-01 10:10:10.245
+date +"%Y-%m-%d %H:%M:%S.%N" | cut -c1-23
 ```
 ## 磁盘读写速率
 ```shell
@@ -215,4 +217,8 @@ mount tmpfs /opt/tmpfs -t tmpfs -o size=32G
 #! /bin/bash
 #假设curl返回的json结构为：{"data":"123"}
 curl -s "http://192.168.1.1:50000/a" | python -c "import json,sys;obj=json.load(sys.stdin);print obj['data']"
+```
+## 生成自增序列，左补零
+```shell
+seq -w 1 100
 ```
