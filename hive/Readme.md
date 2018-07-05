@@ -9,10 +9,10 @@
 ...
 ```
 在hive上建表
-```shell
-hive>create table t_test(id int, name string) row format delimited fields terminated by ',';
+```sql
+hive> create table t_test(id int, name string) row format delimited fields terminated by ',';
 ```
 导入txt数据
-```shell
-hive>load data local inpath '/home/aaa/data.txt' overwrite into t_test;
+```sql
+hive> load data local inpath '/home/aaa/data.txt' overwrite into t_test;
 ```
