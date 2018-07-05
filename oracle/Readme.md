@@ -111,3 +111,16 @@ COMMIT;
 
 END;
 ```
+## oracle快速插入亿级数据
+```sql
+CREATE OR REPLACE PROCEDURE XXX AS
+BEGIN
+  FOR i IN 1..100000000 LOOP
+    --启用append，不写日志，并行插入，并行处理的线程数为10
+    INSERT INTO /*+ append parallel(T_TEST,10) nologging */ T_TEST values(i);
+    IF MOD(i,1000000) = 0 THEN
+      COMMIT;
+    END IF;
+  END LOOP;
+END;
+```
