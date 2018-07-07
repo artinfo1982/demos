@@ -1,5 +1,62 @@
 # C语言的若干技巧和经验
 
+## 生成时间格式字符串，分别精确到秒和毫秒
+```C
+#include <stdio.h>
+#include <time.h>
+#include <string.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/time.h>
+
+/*
+生成时间格式字符串，精确到秒，例2018-01-01 10:10:10
+*/
+char* genTimePrecisionSecond(char* des)
+{
+	if (NULL == des)
+		return NULL;
+	time_t t = time(0);
+	strftime(des, 20, "%Y-%m-%d %H:%M:%S", localtime(&t));
+	return des;
+}
+
+/*
+生成时间格式字符串，精确到豪秒，例2018-01-01 10:10:10.123
+*/
+char* genTimePrecisionMillisecond(char* des)
+{
+	if (NULL == des)
+		return NULL;
+	struct timeval _tv;
+	struct tm _tm;
+	gettimeofday(&_tv, NULL);
+	localtime_r(&(_tv.tv_sec), &_tm);
+	sprintf(des, "%04d-%02d-%02d %02d:%02d:%02d.%03ld", 
+		_tm.tm_year+1900, _tm.tm_mon+1, _tm.tm_mday, 
+		_tm.tm_hour, _tm.tm_min, _tm.tm_sec, _tv.tv_usec/1000);
+	return des;
+}
+
+
+int main(int argc, char* argv[])
+{
+	char* p1 = (char*)malloc(32*sizeof(char));
+	memset(p1, 0x0, 32);
+	char* p2 = (char*)malloc(32*sizeof(char));
+	memset(p2, 0x0, 32);
+	genTimePrecisionSecond(p1);
+	genTimePrecisionMillisecond(p2);
+	printf("%s\n", p1);
+	printf("%s\n", p2);
+	free(p1);
+	p1 = NULL;
+	free(p2);
+	p2 = NULL;
+	return 0;
+}
+```
+
 ## goto
 goto用于跳转到某个特定的区域执行某些特定的代码，比如下面的例子，其中out称为标记：
 ```C
