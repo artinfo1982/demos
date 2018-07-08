@@ -74,7 +74,7 @@ def alexnet(train_lmdb, test_lmdb, mean_file, train_batch_size, test_batch_size,
     ntrain.loss = L.SoftmaxWithLoss(ntrain.fc8, ntrain.label, name='loss')
 
     #--------------------------------------------------
-    # deploy，删去lr_mult、decay_mult
+    # deploy，删去lr_mult、decay_mult、weight_filler、bias_filler
     # ({'shape': {'dim': [batch_size, channels, n_rows, n_cols]}})
     ndeploy.data = L.Input(input_param={'shape': {'dim': [10, 13, 227, 227]}})
 
