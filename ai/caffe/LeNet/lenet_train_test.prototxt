@@ -1,23 +1,6 @@
-name: "LeNet_mnist_train_test"
+name: "LeNet"
 layer {
-  name: "mnist_test"
-  type: "Data"
-  top: "data"
-  top: "label"
-  include {
-    phase: TEST
-  }
-  transform_param {
-    scale: 0.00392156885937
-  }
-  data_param {
-    source: "/home/zxh/caffe/examples/mnist/mnist_test_lmdb"
-    batch_size: 100
-    backend: LMDB
-  }
-}
-layer {
-  name: "mnist_train"
+  name: "mnist"
   type: "Data"
   top: "data"
   top: "label"
@@ -25,11 +8,28 @@ layer {
     phase: TRAIN
   }
   transform_param {
-    scale: 0.00392156885937
+    scale: 0.00390625
   }
   data_param {
-    source: "/home/zxh/caffe/examples/mnist/mnist_train_lmdb"
+    source: "examples/mnist/mnist_train_lmdb"
     batch_size: 64
+    backend: LMDB
+  }
+}
+layer {
+  name: "mnist"
+  type: "Data"
+  top: "data"
+  top: "label"
+  include {
+    phase: TEST
+  }
+  transform_param {
+    scale: 0.00390625
+  }
+  data_param {
+    source: "examples/mnist/mnist_test_lmdb"
+    batch_size: 100
     backend: LMDB
   }
 }
@@ -38,9 +38,16 @@ layer {
   type: "Convolution"
   bottom: "data"
   top: "conv1"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
   convolution_param {
     num_output: 20
     kernel_size: 5
+    stride: 1
     weight_filler {
       type: "xavier"
     }
@@ -65,9 +72,16 @@ layer {
   type: "Convolution"
   bottom: "pool1"
   top: "conv2"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
   convolution_param {
     num_output: 50
     kernel_size: 5
+    stride: 1
     weight_filler {
       type: "xavier"
     }
@@ -92,6 +106,12 @@ layer {
   type: "InnerProduct"
   bottom: "pool2"
   top: "ip1"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
   inner_product_param {
     num_output: 500
     weight_filler {
@@ -113,6 +133,12 @@ layer {
   type: "InnerProduct"
   bottom: "ip1"
   top: "ip2"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
   inner_product_param {
     num_output: 10
     weight_filler {
@@ -124,10 +150,14 @@ layer {
   }
 }
 layer {
-  name: "soft"
-  type: "Softmax"
+  name: "accuracy"
+  type: "Accuracy"
   bottom: "ip2"
-  top: "soft"
+  bottom: "label"
+  top: "accuracy"
+  include {
+    phase: TEST
+  }
 }
 layer {
   name: "loss"
@@ -135,11 +165,4 @@ layer {
   bottom: "ip2"
   bottom: "label"
   top: "loss"
-}
-layer {
-  name: "acc"
-  type: "Accuracy"
-  bottom: "ip2"
-  bottom: "label"
-  top: "acc"
 }
