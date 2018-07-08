@@ -1,29 +1,25 @@
-name: "LeNet_mnist_deploy"
+name: "LeNet"
 layer {
-  name: "mnist_train"
-  type: "Data"
+  name: "data"
+  type: "Input"
   top: "data"
-  top: "label"
-  include {
-    phase: TRAIN
-  }
-  transform_param {
-    scale: 0.00392156885937
-  }
-  data_param {
-    source: "/home/zxh/caffe/examples/mnist/mnist_train_lmdb"
-    batch_size: 64
-    backend: LMDB
-  }
+  input_param { shape: { dim: 64 dim: 1 dim: 28 dim: 28 } }
 }
 layer {
   name: "conv1"
   type: "Convolution"
   bottom: "data"
   top: "conv1"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
   convolution_param {
     num_output: 20
     kernel_size: 5
+    stride: 1
     weight_filler {
       type: "xavier"
     }
@@ -48,9 +44,16 @@ layer {
   type: "Convolution"
   bottom: "pool1"
   top: "conv2"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
   convolution_param {
     num_output: 50
     kernel_size: 5
+    stride: 1
     weight_filler {
       type: "xavier"
     }
@@ -75,6 +78,12 @@ layer {
   type: "InnerProduct"
   bottom: "pool2"
   top: "ip1"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
   inner_product_param {
     num_output: 500
     weight_filler {
@@ -96,6 +105,12 @@ layer {
   type: "InnerProduct"
   bottom: "ip1"
   top: "ip2"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
   inner_product_param {
     num_output: 10
     weight_filler {
@@ -107,22 +122,8 @@ layer {
   }
 }
 layer {
-  name: "soft"
+  name: "prob"
   type: "Softmax"
   bottom: "ip2"
-  top: "soft"
-}
-layer {
-  name: "loss"
-  type: "SoftmaxWithLoss"
-  bottom: "ip2"
-  bottom: "label"
-  top: "loss"
-}
-layer {
-  name: "acc"
-  type: "Accuracy"
-  bottom: "ip2"
-  bottom: "label"
-  top: "acc"
+  top: "prob"
 }
