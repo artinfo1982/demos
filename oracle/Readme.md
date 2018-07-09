@@ -26,7 +26,15 @@ segment space management auto;
 ```
 ## 创建表空间时使用bigfile（创建大容量表空间）
 ```sql
-create bigfile tablespace ts_test datafile '/home/oracle/data.dbf' size 1G autoextend on maxsize 32G;
+create bigfile tablespace ts_test 
+nologging 
+datafile '/home/oracle/data.dbf' 
+size 100g 
+reuse 
+autoextend on 
+next 10g maxsize 1000g 
+extent management local 
+segment space management auto;
 ```
 ## 创建用户并指定默认表空间
 ```sql
