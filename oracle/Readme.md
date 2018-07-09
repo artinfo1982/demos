@@ -1,5 +1,30 @@
 # oracle的一些使用技巧
-## 创建表空间时使用bigfile
+
+## 创建单个表空间
+```sql
+create tablespace ts_test 
+nologging 
+datafile '/opt/oracle/oradata/ora/data01.dbf' 
+size 100m 
+reuse 
+autoextend on 
+next 100m maxsize 1000m 
+extent management local 
+segment space management auto;
+```
+## 创建多个表空间
+```sql
+create tablespace ts_test 
+nologging 
+datafile 
+'/opt/oracle/oradata/ora/data01.dbf' size 100m reuse autoextend on next 100m maxsize 1000m,
+'/opt/oracle/oradata/ora/data02.dbf' size 100m reuse autoextend on next 100m maxsize 1000m,
+'/opt/oracle/oradata/ora/data03.dbf' size 100m reuse autoextend on next 100m maxsize 1000m,
+'/opt/oracle/oradata/ora/data04.dbf' size 100m reuse autoextend on next 100m maxsize 1000m 
+extent management local 
+segment space management auto;
+```
+## 创建表空间时使用bigfile（创建大容量表空间）
 ```sql
 create bigfile tablespace XXX datafile '/home/oracle/abc.dbf' size 1G autoextend on maxsize 32G;
 ```
