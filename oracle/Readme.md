@@ -4,7 +4,7 @@
 ```sql
 create tablespace ts_test 
 nologging 
-datafile '/opt/oracle/oradata/ora/data01.dbf' 
+datafile '/opt/oracle/oradata/ora/data.dbf' 
 size 100m 
 reuse 
 autoextend on 
@@ -26,7 +26,15 @@ segment space management auto;
 ```
 ## 创建表空间时使用bigfile（创建大容量表空间）
 ```sql
-create bigfile tablespace XXX datafile '/home/oracle/abc.dbf' size 1G autoextend on maxsize 32G;
+create bigfile tablespace ts_test datafile '/home/oracle/data.dbf' size 1G autoextend on maxsize 32G;
+```
+## 创建用户并指定默认表空间
+```sql
+create user cd identified by Huawei123 default tablespace ts_test;
+```
+## 给用户赋权限
+```sql
+grant connect,resource,dba to cd;
 ```
 ## 针对某张表启用nologging
 ```sql
