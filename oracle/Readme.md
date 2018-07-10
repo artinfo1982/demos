@@ -167,3 +167,21 @@ BEGIN
   COMMIT;
 END;
 ```
+## oracle查看连接数
+```sql
+--查看当前连接数
+select count(*) from v$session;
+--查看并发连接数
+select count(*) from v$session where status='ACTIVE';
+--查看数据库允许的最大连接数
+select value from v$parameter where name = 'processes';
+--查看数据库允许的最大连接数
+show parameter processes;
+--查看不同用户的连接数
+select username,count(username) from v$session where username is not null group by username;
+
+--修改连接数，需要重启oracle生效
+alter system set processes = 300 scope = spfile;
+shutdown immediate;
+startup;
+```
