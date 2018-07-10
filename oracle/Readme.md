@@ -170,9 +170,9 @@ END;
 ## oracle连接数
 ```sql
 --查看当前连接数
-select count(*) from v$session;
+select count(1) from v$session;
 --查看并发连接数
-select count(*) from v$session where status='ACTIVE';
+select count(1) from v$session where status='ACTIVE';
 --查看数据库允许的最大连接数
 select value from v$parameter where name = 'processes';
 --查看数据库允许的最大连接数
