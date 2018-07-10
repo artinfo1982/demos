@@ -167,7 +167,7 @@ BEGIN
   COMMIT;
 END;
 ```
-## oracle查看连接数
+## oracle连接数
 ```sql
 --查看当前连接数
 select count(*) from v$session;
