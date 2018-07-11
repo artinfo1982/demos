@@ -186,13 +186,16 @@ mysql> select * from cd_tb_test;
 10 rows in set (0.00 sec)
 ```
 
-## 高速复制mysql数据到另一个mysql
+## 高速迁移mysql数据到另一个mysql
 ```text
 假设我们需要将mysql A-->B
 1.在B上创建和A同名的database
 2.在B上建表
 3.停掉B的mysql
 4.将B中mysql数据目录下数据库名目录下的.ibd文件都删了
-5.将A对应目录下的.ibd文件copy到B对应的目录下
-6.启动B
+5.将A对应目录下的.ibd文件复制到一个临时目录中
+6.分别将临时目录中所有ibd文件的第37-38字节、第41-42字节的内容替换为A对应的ibd文件的第37-38字节内容，详见下面的C代码：
+https://github.com/artinfo1982/demos/blob/master/mysql/migrate/mod_ibd.c
+7.将临时目录中所有的ibd文件都复制到B相应的目录中
+8.启动B
 ```
