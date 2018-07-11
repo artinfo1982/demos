@@ -186,7 +186,7 @@ mysql> select * from cd_tb_test;
 10 rows in set (0.00 sec)
 ```
 
-## 高速迁移mysql数据到另一个mysql
+## mysql二进制高速迁移方案
 ```text
 假设我们需要将mysql A-->B
 1.在B上创建和A同名的database
