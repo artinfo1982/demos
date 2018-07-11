@@ -1,4 +1,4 @@
-# Shell脚本的若干有用例子
+# shell示例若干
 ## Linux主机之间实现自动ssh访问
 ```shell
 #! /usr/bin/expect
@@ -222,4 +222,12 @@ curl -s "http://192.168.1.1:50000/a" | python -c "import json,sys;obj=json.load(
 ```shell
 #例如下例，会生成 001 002 ... 100
 seq -w 1 100
+```
+## 读取编辑二进制文件
+```shell
+#显示一个二进制文件（例如xxx.ibd）的前100个字节
+xxd -l 100 xxx.ibd
+#使用vim打开一个二进制文件（例如xxx.ibd）
+vim -b xxx.ibd
+:%!xxd
 ```
