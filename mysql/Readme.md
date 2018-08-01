@@ -192,10 +192,13 @@ mysql> select * from cd_tb_test;
 1.在B上创建和A同名的database
 2.在B上建表
 3.停掉B的mysql
-4.将B中mysql数据目录下数据库名目录下的.ibd文件都删了
-5.将A对应目录下的.ibd文件复制到一个临时目录中
-6.分别将临时目录中所有ibd文件的第37-38字节、第41-42字节的内容替换为A对应的ibd文件的第37-38字节内容，详见下面的C代码：
+4.在B的mysql配置文件my.cnf中的mysqld配置段中添加以下两行：
+innodb_file_per_table = 1
+innodb_force_recovery = 1
+5.将B中mysql数据目录下数据库名目录下的.ibd文件都删了
+6.将A对应目录下的.ibd文件复制到一个临时目录中
+7.分别将临时目录中所有ibd文件的第37-38字节、第41-42字节的内容替换为A对应的ibd文件的第37-38字节内容，详见下面的C代码：
 https://github.com/artinfo1982/demos/blob/master/mysql/migrate/mod_ibd.c
-7.将临时目录中所有的ibd文件都复制到B相应的目录中
-8.启动B
+8.将临时目录中所有的ibd文件都复制到B相应的目录中
+9.启动B
 ```
