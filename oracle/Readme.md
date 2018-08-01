@@ -42,7 +42,10 @@ create user cd identified by Huawei123 default tablespace ts_test;
 ```
 ## 给用户赋权限
 ```sql
+--赋予dba权限
 grant connect,resource,dba to cd;
+--只赋予针对某张表的只读权限，其中XXX是某个表的表名
+grant connect,select on XXX to cd;
 ```
 ## 针对某张表启用nologging
 ```sql
