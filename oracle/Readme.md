@@ -188,3 +188,57 @@ alter system set processes = 300 scope = spfile;
 shutdown immediate;
 startup;
 ```
+
+## 通过直接拷贝数据文件实现oracle快速迁移
+假设源和目的oracle分别为A和B
+1.B安装oracle，B的主机名、数据库实例名、安装目录都和A保持一致
+2.在A查询需要拷贝的文件
+```shell
+sqlplus / as sysdba
+```
+```text
+SQL> show parameter pfile
+NAME     TYPE VALUE
+------------------------------------ ----------- ------------------------------
+spfile    string /u01/app/oracle/product/11.2.0/dbhome_1/dbs/spfileorcl.ora
+SQL> show parameter control
+NAME     TYPE VALUE
+------------------------------------ ----------- ------------------------------
+control_file_record_keep_time integer 7
+control_files   string /u01/app/oracle/oradata/orcl/control01.ctl, /u01/app/oracle/recovery_area/orcl/control02.ctl
+control_management_pack_access string DIAGNOSTIC+TUNING
+SQL> select * from v$logfile;
+ GROUP# STATUS TYPE MEMBER          IS_RECOVERY_DEST_FILE
+---------- ------- ------- -------------------------------------------------------------------------------- ---------------------
+  3  ONLINE /u01/app/oracle/oradata/orcl/redo03.log      NO
+  2  ONLINE /u01/app/oracle/oradata/orcl/redo02.log      NO
+  1  ONLINE /u01/app/oracle/oradata/orcl/redo01.log      NO
+SQL> select name from v$datafile;
+NAME
+--------------------------------------------------------------------------------
+/u01/app/oracle/oradata/orcl/system01.dbf
+/u01/app/oracle/oradata/orcl/sysaux01.dbf
+/u01/app/oracle/oradata/orcl/undotbs01.dbf
+/u01/app/oracle/oradata/orcl/users01.dbf
+/u01/app/oracle/oradata/orcl/users02.dbf
+SQL> select name from v$tempfile;
+NAME
+--------------------------------------------------------------------------------
+/u01/app/oracle/oradata/orcl/temp01.dbf
+```
+可见需要拷贝的文件有如下一些：
+```text
+/u01/app/oracle/product/11.2.0/dbhome_1/dbs/spfileorcl.ora
+/u01/app/oracle/oradata/orcl/control01.ctl
+/u01/app/oracle/recovery_area/orcl/control02.ctl
+/u01/app/oracle/oradata/orcl/redo03.log
+/u01/app/oracle/oradata/orcl/redo02.log
+/u01/app/oracle/oradata/orcl/redo01.log
+/u01/app/oracle/oradata/orcl/system01.dbf
+/u01/app/oracle/oradata/orcl/sysaux01.dbf
+/u01/app/oracle/oradata/orcl/undotbs01.dbf
+/u01/app/oracle/oradata/orcl/users01.dbf
+/u01/app/oracle/oradata/orcl/users02.dbf
+/u01/app/oracle/oradata/orcl/users03.dbf
+/u01/app/oracle/oradata/orcl/temp01.dbf
+```
