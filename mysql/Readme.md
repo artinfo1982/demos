@@ -186,6 +186,30 @@ mysql> select * from cd_tb_test;
 10 rows in set (0.00 sec)
 ```
 
+## mysql快速插入亿级数据
+```sql
+--***非常重要***
+--注意，在插入前，一定要先执行 alter table XXX ENGINE = MYISAM; 加快插入速度
+--在插入都完成后，一定要执行 alter table XXX ENGINE = INNODB; 改回来
+CREATE DEFINER=`cd`@`%` PROCEDURE `cd_proc_test`()
+BEGIN
+    DECLARE i INT UNSIGNED;
+    DECLARE v_vchar VARCHAR(64);
+    
+    SET v_vchar = 'aaa';
+    SET i = 1;
+    
+    WHILE i <= 100000000 DO
+	INSERT INTO cd_tb_test values(i, v_vchar);
+	SET i = i + 1;
+	IF MOD(i, 10000) = 0 THEN
+	    COMMIT;
+	END IF;
+    END WHILE;
+    COMMIT;
+END;
+```
+
 ## mysql二进制高速迁移方案
 ```text
 假设我们需要将mysql A-->B
