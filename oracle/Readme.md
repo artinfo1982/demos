@@ -242,3 +242,42 @@ NAME
 /u01/app/oracle/oradata/orcl/users03.dbf
 /u01/app/oracle/oradata/orcl/temp01.dbf
 ```
+3.停掉A、B
+```shell
+SQL>shutdown immediate;
+```
+4.使用scp命令，逐一将需要拷贝的文件从A拷贝到B，下面的示例中192.168.1.18表示B
+```shell
+scp /u01/app/oracle/product/11.2.0/dbhome_1/dbs/spfileorcl.ora oracle@192.168.1.18:/u01/app/oracle/product/11.2.0/dbhome_1/dbs/spfileorcl.ora
+scp /u01/app/oracle/oradata/orcl/control01.ctl oracle@192.168.1.18:/u01/app/oracle/oradata/orcl/control01.ctl
+scp /u01/app/oracle/recovery_area/orcl/control02.ctl oracle@192.168.1.18:/u01/app/oracle/recovery_area/orcl/control02.ctl
+scp /u01/app/oracle/oradata/orcl/redo03.log oracle@192.168.1.18:/u01/app/oracle/oradata/orcl/redo03.log
+scp /u01/app/oracle/oradata/orcl/redo02.log oracle@192.168.1.18:/u01/app/oracle/oradata/orcl/redo02.log
+scp /u01/app/oracle/oradata/orcl/redo01.log oracle@192.168.1.18:/u01/app/oracle/oradata/orcl/redo01.log
+scp /u01/app/oracle/oradata/orcl/system01.dbf oracle@192.168.1.18:/u01/app/oracle/oradata/orcl/system01.dbf
+scp /u01/app/oracle/oradata/orcl/sysaux01.dbf oracle@192.168.1.18:/u01/app/oracle/oradata/orcl/sysaux01.dbf
+scp /u01/app/oracle/oradata/orcl/undotbs01.dbf oracle@192.168.1.18:/u01/app/oracle/oradata/orcl/undotbs01.dbf
+scp /u01/app/oracle/oradata/orcl/users01.dbf oracle@192.168.1.18:/u01/app/oracle/oradata/orcl/users01.dbf
+scp /u01/app/oracle/oradata/orcl/users02.dbf oracle@192.168.1.18:/u01/app/oracle/oradata/orcl/users02.dbf
+scp /u01/app/oracle/oradata/orcl/users03.dbf oracle@192.168.1.18:/u01/app/oracle/oradata/orcl/users03.dbf
+scp /u01/app/oracle/oradata/orcl/temp01.dbf oracle@192.168.1.18:/u01/app/oracle/oradata/orcl/temp01.dbf
+```
+5.启动B
+```shell
+sqlplus / as sysdba
+```
+```text
+SQL> startup
+```
+检查数据库的状态是否是open
+```text
+SQL> select status from v$instance;
+STATUS
+------------
+OPEN
+```
+如果不是open，再依次执行下面两句
+```text
+SQL> recover database;
+SQL> alter database open;
+```
