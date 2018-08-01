@@ -161,7 +161,11 @@ BEGIN
 	END IF;
 	INSERT INTO cd_tb_test values(i, v_float, v_double, v_char, v_vchar1, v_vchar2, v_date, v_datetime, v_blob);
 	SET i = i + 1;
+	IF MOD(i, 5) = 0 THEN
+	    COMMIT;
+	END IF;
     END WHILE;
+    COMMIT;
 END;
 ```
 使用mysql-front，在数据库上右键“新建”-->“过程”，将存储过程copy进去。   
