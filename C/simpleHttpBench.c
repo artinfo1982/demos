@@ -77,5 +77,57 @@ void *work(void *arg)
       __sync_fetch_and_add(&fail, 1);
       continue;
     }
+    res = strstr(buffer, key);
+    if (NULL == res)
+    {
+      close(sfd);
+      __sync_fetch_and_add(&fail, 1);
+      continue;
+    }
+    close(sfd);
+    __sync_fetch_and_add(&success, 1);
   }
+}
+
+int main(int argc, char *argv[])
+{
+  if (argc != 5)
+  {
+    printf("Input params not enough! Usage %s srvIp srvPort threadNum key\n", argv[0]);
+    exit(1);
+  }
+  srvIp = argv[1];
+  srvPort = argv[2];
+  threadNum = atoi(argv[3]);
+  key = argv[4];
+  
+  memset(&srvAddr, 0x0, sizeof(srvAddr));
+  srvAddr.sin_family = AF_INET;
+  srvAddr.sin_addr.s_addr = inet_addr(srvIp);
+  srvAddr.sin_port = htons((unsigned short)atoi(srvPort));
+  
+  int i;
+  pthread_t t0, t[threadNum];
+  pthread_attr_t attr;
+  pthread_attr_init(&attr);
+  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+  if (0 != pthread_create(&t0, NULL, print, NULL))
+  {
+    printf("create timer thread failed\n");
+    exit(1);
+  }
+  for (i = 0; i < threadNum; i++)
+  {
+    if (0 != pthread_create(&t[i], NULL, work, NULL))
+    {
+      printf("create work executor thread failed\n");
+      exit(1);
+    }
+  }
+  pthread_join(t0, NULL);
+  for (i = 0; i < threadNum; i++)
+  {
+    pthread_join(t[i], NULL);
+  }
+  return 0;
 }
