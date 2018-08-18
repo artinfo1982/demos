@@ -14,7 +14,7 @@
 static int threadNum = 0;
 static char *srvIp = NULL;
 static char *srvPort = NULL;
-stattc char *key = NULL;
+static char *key = NULL;
 static long success = 0;
 static long fail = 0;
 static struct sockaddr_in srvAddr;
