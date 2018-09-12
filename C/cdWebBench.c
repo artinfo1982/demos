@@ -134,18 +134,18 @@ static void alarm_handler(int signal)
 static void usage(void)
 {
 	fprintf(stderr,
-	"cdWebBench [option]... URL\n"
-	"  -f|--force\t\t\tDon't wait for reply from server.\n"
-	"  -r|--reload\t\t\tSend reload request - Pragma: no-cache.\n"
-	"  -t|--time <sec>\t\tRun benchmark for <sec> seconds. Default 30.\n"
-	"  -p|--proxy <server:port>\tUse proxy server for request.\n"
-	"  -c|--clients <n>\t\tRun <n> HTTP clients at once. Default one.\n"
-	"  --get\t\t\t\tUse GET request method.\n"
-        "  --post\t\t\tUse GET request method.\n"
-        "  --put\t\t\t\tUse GET request method.\n"
-        "  --delete\t\t\tUse GET request method.\n"
-        "  -d|--data <string>\t\tSend data, which POST, PUT, DELETE needed\n"
-	"  -?|-h|--help\t\t\tThis information.\n");
+		"cdWebBench [option]... URL\n"
+		"  -f|--force\t\t\tDon't wait for reply from server.\n"
+		"  -r|--reload\t\t\tSend reload request - Pragma: no-cache.\n"
+		"  -t|--time <sec>\t\tRun benchmark for <sec> seconds. Default 30.\n"
+		"  -p|--proxy <server:port>\tUse proxy server for request.\n"
+		"  -c|--clients <n>\t\tRun <n> HTTP clients at once. Default one.\n"
+		"  --get\t\t\t\tUse GET request method.\n"
+        	"  --post\t\t\tUse GET request method.\n"
+        	"  --put\t\t\t\tUse GET request method.\n"
+        	"  --delete\t\t\tUse GET request method.\n"
+        	"  -d|--data <string>\t\tSend data, which POST, PUT, DELETE needed\n"
+		"  -?|-h|--help\t\t\tThis information.\n");
 };
 
 int main(int argc, char *argv[])
@@ -153,9 +153,55 @@ int main(int argc, char *argv[])
 	int opt = 0;
 	int options_index = 0;
 	char *tmp = NULL;
-	if(argc == 1)
+	if (argc == 1)
 	{
 		usage();
 		return 2;
 	}
+	
+	/*
+	getopt_long，解析命令行参数
+	
+	*/
+	while ((opt = getopt_long(argc, argv, "frt:p:c:d:?h", long_options, &options_index)) != EOF)
+ 	{
+		switch(opt)
+ 		{
+			case  0:
+				break;
+			case 'f':
+				force = 1;
+				break;
+			case 'r':
+				force_reload = 1;
+				break; 
+			case 't':
+				benchtime = atoi(optarg);
+				break;	     
+			case 'p': 
+	     /* proxy server parsing server:port */
+	     tmp=strrchr(optarg,':');
+	     proxyhost=optarg;
+	     if(tmp==NULL)
+	     {
+		     break;
+	     }
+	     if(tmp==optarg)
+	     {
+		     fprintf(stderr,"Error in option --proxy %s: Missing hostname.\n",optarg);
+		     return 2;
+	     }
+	     if(tmp==optarg+strlen(optarg)-1)
+	     {
+		     fprintf(stderr,"Error in option --proxy %s Port number is missing.\n",optarg);
+		     return 2;
+	     }
+	     *tmp='\0';
+	     proxyport=atoi(tmp+1);break;
+   case ':':
+   case 'h':
+   case '?': usage();return 2;break;
+   case 'c': clients=atoi(optarg);break;
+  }
+ }
 }
