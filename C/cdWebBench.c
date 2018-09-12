@@ -91,3 +91,16 @@ static const struct option long_options[] =
   {"data", required_argument, NULL, 'd'},
   {NULL, 0, NULL, 0}
 };
+
+//下面这个Socket函数取自 Virginia Tech Computing Center
+int Socket(const char *host, int clientPort)
+{
+  int sock;
+  unsigned long inaddr;
+  struct sockaddr_in ad;
+  struct hostent *hp;
+  
+  memset(&ad, 0, sizeof(ad));
+  ad.sin_family = AF_INET;
+  inaddr = inet_addr(host);
+}
