@@ -55,3 +55,24 @@ static int benchtime = 30;
 定义管道，用于父子进程之间的交互，在后续详细解释。
 */
 static int mypipe[2];
+//在<sys/param.h>中，MAXHOSTNAMELEN定义为256
+static char host[MAXHOSTNAMELEN];
+#define REQUEST_SIZE 4096
+static char request[REQUEST_SIZE];
+#define READ_BUF_SIZE 4096
+#define REQUEST_BODY_SIZE 2048
+#define REQUEST_URL_LENGTH 1500
+static char *req_body;
+
+/*
+option结构体的定义如下：
+struct option {
+  const char *name; --- 选项名称
+  int has_arg; --- 选项后面是否跟参数
+  int *flag; --- 返回行为，NULL则返回val，如果指向一个变量，则将val赋值给变量
+  int val; --- 值
+};
+has_arg有如下取值的可能：
+no_argument表示后面不允许带参数，required_argument表示后面必须带参数
+no_argument也可以用0代替，required_argument也可以用1代替，2表示既可以带也可以不带参数
+*/
