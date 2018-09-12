@@ -78,50 +78,47 @@ no_argument也可以用0代替，required_argument也可以用1代替，2表示�
 */
 static const struct option long_options[] =
 {
-  {"force", no_argument, &force, 1},
-  {"reload", no_argument, &force_reload, 1},
-  {"time", required_argument, NULL, 't'},
-  {"help", no_argument, NULL, '?'},
-  {"get", no_argument, &method, METHOD_GET},
-  {"post", no_argument, &method, METHOD_POST},
-  {"put", no_argument, &method, METHOD_PUT},
-  {"delete", no_argument, &method, METHOD_DELETE},
-  {"proxy", required_argument, NULL, 'p'},
-  {"clients", required_argument, NULL, 'c'},
-  {"data", required_argument, NULL, 'd'},
-  {NULL, 0, NULL, 0}
+	{"force", no_argument, &force, 1},
+  	{"reload", no_argument, &force_reload, 1},
+  	{"time", required_argument, NULL, 't'},
+  	{"help", no_argument, NULL, '?'},
+  	{"get", no_argument, &method, METHOD_GET},
+  	{"post", no_argument, &method, METHOD_POST},
+  	{"put", no_argument, &method, METHOD_PUT},
+  	{"delete", no_argument, &method, METHOD_DELETE},
+  	{"proxy", required_argument, NULL, 'p'},
+  	{"clients", required_argument, NULL, 'c'},
+  	{"data", required_argument, NULL, 'd'},
+  	{NULL, 0, NULL, 0}
 };
 
 //下面这个Socket函数取自 Virginia Tech Computing Center
 int Socket(const char *host, int clientPort)
 {
-  int sock;
-  unsigned long inaddr;
-  struct sockaddr_in ad;
-  struct hostent *hp;
-    
-  memset(&ad, 0, sizeof(ad));
-  ad.sin_family = AF_INET;
-
-  inaddr = inet_addr(host);
-  //如果不是一个合法的ip地址，会返回INADDR_NONE
-  if (inaddr != INADDR_NONE)
-      memcpy(&ad.sin_addr, &inaddr, sizeof(inaddr));
-  else
-  {
-      hp = gethostbyname(host);
-      if (hp == NULL)
-          return -1;
-      memcpy(&ad.sin_addr, hp->h_addr, hp->h_length);
-  }
-  ad.sin_port = htons(clientPort);
-    
-  sock = socket(AF_INET, SOCK_STREAM, 0);
-  if (sock < 0)
-      return sock;
-  if (connect(sock, (struct sockaddr *)&ad, sizeof(ad)) < 0)
-      return -1;
-  return sock;
+	int sock;
+	unsigned long inaddr;
+	struct sockaddr_in ad;
+	struct hostent *hp;
+	memset(&ad, 0, sizeof(ad));
+	ad.sin_family = AF_INET;
+	inaddr = inet_addr(host);
+	//如果不是一个合法的ip地址，会返回INADDR_NONE
+	if (inaddr != INADDR_NONE)
+		memcpy(&ad.sin_addr, &inaddr, sizeof(inaddr));
+	else
+	{
+		hp = gethostbyname(host);
+		if (hp == NULL)
+			return -1;
+		memcpy(&ad.sin_addr, hp->h_addr, hp->h_length);
+	}
+	ad.sin_port = htons(clientPort);
+	sock = socket(AF_INET, SOCK_STREAM, 0);
+	if (sock < 0)
+		return sock;
+	if (connect(sock, (struct sockaddr *)&ad, sizeof(ad)) < 0)
+		return -1;
+	return sock;
 }
 
 static void benchcore(const char* host,const int port, const char *request);
@@ -130,23 +127,35 @@ static void build_request(const char *url);
 //注册信号处理函数，此处是针对定时器到时的信号处理
 static void alarm_handler(int signal)
 {
-  //标记计时器到时
-  timerexpired=1;
+	//标记计时器到时
+	timerexpired = 1;
 }
 
 static void usage(void)
 {
-   fprintf(stderr,
-	         "cdWebBench [option]... URL\n"
-	         "  -f|--force\t\t\tDon't wait for reply from server.\n"
-	         "  -r|--reload\t\t\tSend reload request - Pragma: no-cache.\n"
-	         "  -t|--time <sec>\t\tRun benchmark for <sec> seconds. Default 30.\n"
-	         "  -p|--proxy <server:port>\tUse proxy server for request.\n"
-	         "  -c|--clients <n>\t\tRun <n> HTTP clients at once. Default one.\n"
-	         "  --get\t\t\t\tUse GET request method.\n"
-           "  --post\t\t\tUse GET request method.\n"
-           "  --put\t\t\t\tUse GET request method.\n"
-           "  --delete\t\t\tUse GET request method.\n"
-           "  -d|--data <string>\t\tSend data, which POST, PUT, DELETE needed\n"
-	         "  -?|-h|--help\t\t\tThis information.\n");
+	fprintf(stderr,
+	"cdWebBench [option]... URL\n"
+	"  -f|--force\t\t\tDon't wait for reply from server.\n"
+	"  -r|--reload\t\t\tSend reload request - Pragma: no-cache.\n"
+	"  -t|--time <sec>\t\tRun benchmark for <sec> seconds. Default 30.\n"
+	"  -p|--proxy <server:port>\tUse proxy server for request.\n"
+	"  -c|--clients <n>\t\tRun <n> HTTP clients at once. Default one.\n"
+	"  --get\t\t\t\tUse GET request method.\n"
+        "  --post\t\t\tUse GET request method.\n"
+        "  --put\t\t\t\tUse GET request method.\n"
+        "  --delete\t\t\tUse GET request method.\n"
+        "  -d|--data <string>\t\tSend data, which POST, PUT, DELETE needed\n"
+	"  -?|-h|--help\t\t\tThis information.\n");
 };
+
+int main(int argc, char *argv[])
+{
+	int opt = 0;
+	int options_index = 0;
+	char *tmp = NULL;
+	if(argc == 1)
+	{
+		usage();
+		return 2;
+	}
+}
