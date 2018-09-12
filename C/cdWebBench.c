@@ -76,3 +76,18 @@ has_arg有如下取值的可能：
 no_argument表示后面不允许带参数，required_argument表示后面必须带参数
 no_argument也可以用0代替，required_argument也可以用1代替，2表示既可以带也可以不带参数
 */
+static const struct option long_options[] =
+{
+  {"force", no_argument, &force, 1},
+  {"reload", no_argument, &force_reload, 1},
+  {"time", required_argument, NULL, 't'},
+  {"help", no_argument, NULL, '?'},
+  {"get", no_argument, &method, METHOD_GET},
+  {"post", no_argument, &method, METHOD_POST},
+  {"put", no_argument, &method, METHOD_PUT},
+  {"delete", no_argument, &method, METHOD_DELETE},
+  {"proxy", required_argument, NULL, 'p'},
+  {"clients", required_argument, NULL, 'c'},
+  {"data", required_argument, NULL, 'd'},
+  {NULL, 0, NULL, 0}
+};
