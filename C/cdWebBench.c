@@ -161,7 +161,12 @@ int main(int argc, char *argv[])
 	
 	/*
 	getopt_long，解析命令行参数
-	
+	函数定义原型：
+	int getopt_long(int argc, char * const argv[], const char *optstring, const struct option *longopts, int *longindex);
+	argc, argv不解释
+	两个冒号之间的参数，表示后面必须强制带上参数，比如-p xxx
+	选项后面跟的参数是optarg，举例-t 30，这个30就是optarg，只是默认是字符串类型
+	optind是指向不能解析的第一个参数位置，比如./test -f -r http://1.1.1.1:2222/，其中optind就指向URL的起始位置，./test从0开始，此时optind=3，argc=4
 	*/
 	while ((opt = getopt_long(argc, argv, "frt:p:c:d:?h", long_options, &options_index)) != EOF)
  	{
