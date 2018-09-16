@@ -345,16 +345,18 @@ void build_request(const char *url)
 		//如果url包含':'，并且':'出现在url包含的'/'的前面
 		if (index(url + i, ':') != NULL && index(url + i, ':') < index(url + i, '/'))
    		{
-	   strncpy(host,url+i,strchr(url+i,':')-url-i);
-	   bzero(tmp,10);
-	   strncpy(tmp,index(url+i,':')+1,strchr(url+i,'/')-index(url+i,':')-1);
-	   /* printf("tmp=%s\n",tmp); */
-	   proxyport=atoi(tmp);
-	   if(proxyport==0) proxyport=80;
-   } else
-   {
-     strncpy(host,url+i,strcspn(url+i,"/"));
-   }
+			//解析出host填入host变量，例如http://1.1.1.1:8080/abc，i=7，url=http..., url+i=1.1..., strchr(url + i, ':') - url
+	   		strncpy(host, url + i, strchr(url + i, ':') - url - i);
+	   		bzero(tmp, 10);
+	   		strncpy(tmp, index(url + i, ':') + 1, strchr(url + i, '/') - index(url + i, ':') - 1);
+	   		proxyport = atoi(tmp);
+	   		if (proxyport == 0)
+				proxyport = 80;
+   		}
+		else
+   		{
+     			strncpy(host,url+i,strcspn(url+i,"/"));
+   		}
    // printf("Host=%s\n",host);
    strcat(request+strlen(request),url+i+strcspn(url+i,"/"));
   } else
