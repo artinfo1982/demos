@@ -422,48 +422,39 @@ static int bench(void)
 	pipe(int fd[2])本身创建的管道两端都在一个进程中，没有实际意义，一般是将该进程fork后成为父子进程再使用管道。
 	本程序中使用管道，主要是为了实现在父子进程之间传递统计信息（成功数、失败数等），便于在父进程中打印
 	*/
-  if(pipe(mypipe))
-  {
-	  perror("pipe failed.");
-	  return 3;
-  }
+	if (pipe(mypipe))
+	{
+		perror("pipe failed.");
+		return 3;
+	}
 
-  /* not needed, since we have alarm() in childrens */
-  /* wait 4 next system clock tick */
-  /*
-  cas=time(NULL);
-  while(time(NULL)==cas)
-        sched_yield();
-  */
+  	/* fork childs */
+  	for (i = 0; i < clients; i++)
+  	{
+		pid = fork();
+		if (pid <= (pid_t)0)
+		{
+			/* child process or error*/
+			//此处sleep的作用是将父进程睡觉，目的是每次让子进程优先运行
+			sleep(1);
+			break;
+		}
+  	}
+  	if (pid < (pid_t)0)
+	{
+		fprintf(stderr, "problems forking worker no. %d\n", i);
+		perror("fork failed.");
+		return 3;
+	}
 
-  /* fork childs */
-  for(i=0;i<clients;i++)
-  {
-	   pid=fork();
-	   if(pid <= (pid_t) 0)
-	   {
-		   /* child process or error*/
-	           sleep(1); /* make childs faster */
-		   break;
-	   }
-  }
+	//子进程
+	if (pid == (pid_t)0)
+	{
+		if(proxyhost == NULL)
+			benchcore(host, proxyport, request);
+		else
+			benchcore(proxyhost, proxyport, request);
 
-  if( pid< (pid_t) 0)
-  {
-          fprintf(stderr,"problems forking worker no. %d\n",i);
-	  perror("fork failed.");
-	  return 3;
-  }
-
-  if(pid== (pid_t) 0)
-  {
-    /* I am a child */
-    if(proxyhost==NULL)
-      benchcore(host,proxyport,request);
-         else
-      benchcore(proxyhost,proxyport,request);
-
-         /* write results to pipe */
 	 f=fdopen(mypipe[1],"w");
 	 if(f==NULL)
 	 {
