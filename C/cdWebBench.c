@@ -183,26 +183,32 @@ int main(int argc, char *argv[])
 			case 't':
 				benchtime = atoi(optarg);
 				break;	     
-			case 'p': 
-	     /* proxy server parsing server:port */
-	     tmp=strrchr(optarg,':');
-	     proxyhost=optarg;
-	     if(tmp==NULL)
-	     {
-		     break;
-	     }
-	     if(tmp==optarg)
-	     {
-		     fprintf(stderr,"Error in option --proxy %s: Missing hostname.\n",optarg);
-		     return 2;
-	     }
-	     if(tmp==optarg+strlen(optarg)-1)
-	     {
-		     fprintf(stderr,"Error in option --proxy %s Port number is missing.\n",optarg);
-		     return 2;
-	     }
-	     *tmp='\0';
-	     proxyport=atoi(tmp+1);break;
+			case 'p':
+				/*
+				解析代理信息，server:port
+				strchr，查找一个字符串在另一个字符串中末次出现的位置，并返回从字符串中的这个位置起，一直到字符串结束的所有字符
+				比如-p http://1.1.1.1:2222，tmp=2222，由于80端口默认可以不写，所以可能出现-p http://1.1.1.1，此时tmp就是NULL
+				*/
+	     			tmp = strrchr(optarg, ':');
+	     			proxyhost = optarg;
+				//只有hostname
+	     			if (tmp == NULL)
+		     			break;
+				//缺少hostname，比如-p :2222
+	     			if (tmp == optarg)
+	     			{
+		     			fprintf(stderr, "Error in option --proxy %s: Missing hostname.\n", optarg);
+		     			return 2;
+	    	 		}
+				//缺少port，比如-p http://1.1.1.1:
+	     			if(tmp==optarg+strlen(optarg)-1)
+	     			{
+		     			fprintf(stderr, "Error in option --proxy %s Port number is missing.\n", optarg);
+		     			return 2;
+	     			}
+	     			*tmp = '\0';
+	     			proxyport =atoi(tmp + 1);
+				break;
    case ':':
    case 'h':
    case '?': usage();return 2;break;
