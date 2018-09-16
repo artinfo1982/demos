@@ -345,45 +345,55 @@ void build_request(const char *url)
 		//如果url包含':'，并且':'出现在url包含的'/'的前面
 		if (index(url + i, ':') != NULL && index(url + i, ':') < index(url + i, '/'))
    		{
-			//解析出host填入host变量，例如http://1.1.1.1:8080/abc，i=7，url=http..., url+i=1.1..., strchr(url + i, ':') - url
+			//解析出host填入host变量，例如http://1.1.1.1:8080/abc，i=7，url=http..., url+i=1.1..., strchr(url + i, ':') - url - i为1.1.1.1的长度 url
 	   		strncpy(host, url + i, strchr(url + i, ':') - url - i);
 	   		bzero(tmp, 10);
+			//将端口解析出来，存入tmp
 	   		strncpy(tmp, index(url + i, ':') + 1, strchr(url + i, '/') - index(url + i, ':') - 1);
 	   		proxyport = atoi(tmp);
 	   		if (proxyport == 0)
 				proxyport = 80;
    		}
+		//url不包含':'，例如http://1.1.1.1/abc，也是合法的，默认端口为80
 		else
    		{
-     			strncpy(host,url+i,strcspn(url+i,"/"));
+			/*
+			#include <string.h>
+			int strcspn(char *str, char *accept);
+			strcspn计算字符串str中开头连续有几个字符都不属于字符串accept
+			*/
+     			strncpy(host, url + i, strcspn(url + i, "/"));
    		}
-   // printf("Host=%s\n",host);
-   strcat(request+strlen(request),url+i+strcspn(url+i,"/"));
-  } else
-  {
-   // printf("ProxyHost=%s\nProxyPort=%d\n",proxyhost,proxyport);
-   strcat(request,url);
-  }
-  if(http10==1)
-	  strcat(request," HTTP/1.0");
-  else if (http10==2)
-	  strcat(request," HTTP/1.1");
-  strcat(request,"\r\n");
-  if(http10>0)
-	  strcat(request,"User-Agent: WebBench "PROGRAM_VERSION"\r\n");
-  if(proxyhost==NULL && http10>0)
-  {
-	  strcat(request,"Host: ");
-	  strcat(request,host);
-	  strcat(request,"\r\n");
-  }
-  if(force_reload && proxyhost!=NULL)
-  {
-	  strcat(request,"Pragma: no-cache\r\n");
-  }
-  if(http10>1)
-	  strcat(request,"Connection: close\r\n");
-  /* add empty line at end */
-  if(http10>0) strcat(request,"\r\n"); 
-  // printf("Req=%s\n",request);
+		//在request的最后加上URI部分，例如url=http://1.1.1.1:8080/abc，则在当前request的最后加上/abc
+   		strcat(request + strlen(request), url + i + strcspn(url + i, "/"));
+  	}
+	//如果有proxy，则直接加上proxy的url
+	else
+		strcat(request,url);
+	strcat(request, " HTTP/1.1\r\n");
+  	if (proxyhost == NULL)
+  	{
+		strcat(request, "Host: ");
+		strcat(request, host);
+		strcat(request, "\r\n");
+  	}
+  	if (force_reload && proxyhost != NULL)
+  	{
+		strcat(request, "Pragma: no-cache\r\n");
+  	}
+	strcat(request, "Connection: close\r\n");
+	if (method == METHOD_GET)
+	{
+		strcat(request, "Content-Length: 0\r\n");
+		strcat(request, "\r\n");
+	}
+	else
+	{
+		body_len = strlen(req_body);
+		sprintf(str_body_len, "%d", body_len);
+		strcat(request, "Content-Length: ");
+		strcat(request, str_body_len);
+		strcat(request, "\r\n\r\n");
+		strcat(request, req_body);
+	}
 }
