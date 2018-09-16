@@ -209,10 +209,26 @@ int main(int argc, char *argv[])
 	     			*tmp = '\0';
 	     			proxyport =atoi(tmp + 1);
 				break;
-   case ':':
-   case 'h':
-   case '?': usage();return 2;break;
-   case 'c': clients=atoi(optarg);break;
-  }
- }
+   			case ':':
+   			case 'h':
+   			case '?':
+				usage();
+				return 2;
+				break;
+   			case 'c':
+				clients = atoi(optarg);
+				break;
+			case 'd':
+				if (strlen(optarg) > REQUEST_BODY_SIZE)
+				{
+					fprintf(stderr, "ERROR: Request body length more than %d!\n", REQUEST_BODY_SIZE);
+		     			return 2;
+				}
+				req_body = malloc(REQUEST_BODY_SIZE * sizeof(char));
+				memset(req_body, 0x0, REQUEST_BODY_SIZE);
+				req_body = optarg;
+				break;
+  		}
+ 	}
+	
 }
