@@ -319,28 +319,32 @@ void build_request(const char *url)
 		fprintf(stderr, "URL is too long, more than %d bytes.\n", REQUEST_URL_LENGTH);
 		exit(2);
 	}
- 	if (proxyhost != NULL)
+ 	if (proxyhost == NULL)
 	{
 		if (0 != strncasecmp("http://", url, 7)) 
 		{
-			fprintf(stderr,"\nOnly HTTP protocol is directly supported, set --proxy for others.\n");
+			fprintf(stderr, "URL must begin with 'http://'\n");
 			exit(2);
 		}
 	}
-  /* protocol/host delimiter */
-  i=strstr(url,"://")-url+3;
-  /* printf("%d\n",i); */
-
-  if(strchr(url+i,'/')==NULL) {
-                                fprintf(stderr,"\nInvalid URL syntax - hostname don't ends with '/'.\n");
-                                exit(2);
-                              }
-  if(proxyhost==NULL)
-  {
-   /* get port from hostname */
-   if(index(url+i,':')!=NULL &&
-      index(url+i,':')<index(url+i,'/'))
-   {
+	//获取url的hostname的起始位置，例如http://1.1.1.1:8080，则i=7（4-0+3），指向1.1.1.1的首地址
+  	i = strstr(url, "://") - url + 3;
+	//host必须以'/'结尾，目的是便于解析端口信息，比如http://1.1.1.1:8080/，最后一个/的目的只是为了便于后续的代码解析8080
+  	if (strchr(url + i, '/') == NULL)
+	{
+		fprintf(stderr, "URL must ends with '/'.\n");
+		exit(2);
+	}
+  	if (proxyhost == NULL)
+  	{
+		/*
+		#include <string.h>
+		char *index(const char *s, int c);
+		index函数返回字符串s中第一个出现c的地址，字符串结束字符（NULL）也视为字符串一部分
+		*/
+		//如果url包含':'，并且':'出现在url包含的'/'的前面
+		if (index(url + i, ':') != NULL && index(url + i, ':') < index(url + i, '/'))
+   		{
 	   strncpy(host,url+i,strchr(url+i,':')-url-i);
 	   bzero(tmp,10);
 	   strncpy(tmp,index(url+i,':')+1,strchr(url+i,'/')-index(url+i,':')-1);
