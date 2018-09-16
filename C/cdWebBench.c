@@ -307,23 +307,26 @@ void build_request(const char *url)
 			break;
   	}
 		  
-  strcat(request," ");
+  	strcat(request, " ");
 
-  if(NULL==strstr(url,"://"))
-  {
-	  fprintf(stderr, "\n%s: is not a valid URL.\n",url);
-	  exit(2);
-  }
-  if(strlen(url)>1500)
-  {
-         fprintf(stderr,"URL is too long.\n");
-	 exit(2);
-  }
-  if(proxyhost==NULL)
-	   if (0!=strncasecmp("http://",url,7)) 
-	   { fprintf(stderr,"\nOnly HTTP protocol is directly supported, set --proxy for others.\n");
-             exit(2);
-           }
+  	if (NULL == strstr(url, "://"))
+  	{
+		fprintf(stderr, "\n%s: is not a valid URL.\n",url);
+		exit(2);
+  	}
+  	if (strlen(url) > REQUEST_URL_LENGTH)
+	{
+		fprintf(stderr, "URL is too long, more than %d bytes.\n", REQUEST_URL_LENGTH);
+		exit(2);
+	}
+ 	if (proxyhost != NULL)
+	{
+		if (0 != strncasecmp("http://", url, 7)) 
+		{
+			fprintf(stderr,"\nOnly HTTP protocol is directly supported, set --proxy for others.\n");
+			exit(2);
+		}
+	}
   /* protocol/host delimiter */
   i=strstr(url,"://")-url+3;
   /* printf("%d\n",i); */
