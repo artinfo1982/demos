@@ -265,5 +265,15 @@ int main(int argc, char *argv[])
 		default:
 			break;
  	}
- 	printf(" %s",argv[optind]);
+ 	printf(" %s", argv[optind]);
+	printf("\n");
+ 	printf("%d clients, running %d sec", clients, benchtime);
+ 	if (force)
+		printf(", early socket close");
+ 	if (proxyhost != NULL)
+		printf(", via proxy server %s:%d", proxyhost, proxyport);
+ 	if (force_reload)
+		printf(", forcing reload");
+ 	printf(".\n");
+ 	return bench();
 }
