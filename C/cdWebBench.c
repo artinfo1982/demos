@@ -231,4 +231,39 @@ int main(int argc, char *argv[])
   		}
  	}
 	
+	//缺少URL，例如./test -f -r, argc=3, optind=3
+	if (optind == argc)
+	{
+		fprintf(stderr,"webbench: Missing URL!\n");
+		usage();
+		return 2;
+	}
+	
+	//如果不填并发数，默认一个并发
+	if (clients == 0)
+		clients = 1;
+	//如果不填测试时长，默认测试时长60秒
+	if (benchtime == 0)
+		benchtime = 60;
+	build_request(argv[optind]);
+ 	//print bench info
+ 	printf("\nBenchmarking: ");
+ 	switch(method)
+ 	{
+		case METHOD_GET:
+			printf("GET");
+			break;
+		case METHOD_POST:
+			printf("POST");
+			break;
+		case METHOD_PUT:
+			printf("PUT");
+			break;
+		case METHOD_DELETE:
+			printf("DELETE");
+			break;
+		default:
+			break;
+ 	}
+ 	printf(" %s",argv[optind]);
 }
