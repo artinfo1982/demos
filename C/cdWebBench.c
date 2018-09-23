@@ -454,33 +454,50 @@ static int bench(void)
 			benchcore(host, proxyport, request);
 		else
 			benchcore(proxyhost, proxyport, request);
-
-	 f=fdopen(mypipe[1],"w");
-	 if(f==NULL)
-	 {
-		 perror("open pipe for writing failed.");
-		 return 3;
-	 }
-	 /* fprintf(stderr,"Child - %d %d\n",speed,failed); */
-	 fprintf(f,"%d %d %d\n",speed,failed,bytes);
-	 fclose(f);
-	 return 0;
-  } else
-  {
-	  f=fdopen(mypipe[0],"r");
-	  if(f==NULL) 
-	  {
-		  perror("open pipe for reading failed.");
-		  return 3;
-	  }
-	  setvbuf(f,NULL,_IONBF,0);
-	  speed=0;
-          failed=0;
-          bytes=0;
-
-	  while(1)
-	  {
-		  pid=fscanf(f,"%d %d %d",&i,&j,&k);
+		/*
+		管道文件，不能直接用fopen打开，得到一个文件描述符，才能使用其他函数对其进行I/O
+		w表示覆盖写，而w+表示追加写
+		*/
+	 	f = fdopen(mypipe[1], "w");
+	 	if (f == NULL)
+	 	{
+			perror("open pipe for writing failed.");
+			return 3;
+	 	}
+		//正常情况下，一个子进程会向管道写三个参数
+	 	fprintf(f, "%d %d %d\n", speed, failed, bytes);
+	 	fclose(f);
+	 	return 0;
+  	}
+	//父进程
+	else
+  	{
+		//从管道的读端读取数据
+		f = fdopen(mypipe[0], "r");
+	  	if(f == NULL) 
+	  	{
+			perror("open pipe for reading failed.");
+			return 3;
+	  	}
+		/*
+		#include <stdio.h>
+		int setvbuf(FILE *stream, char *buf, int type, unsigned size);
+		setvbuf设定文件流的缓冲区，type的取值说明如下：
+		_IOFBF（满缓冲）：当缓冲区为空时，从流读入数据，或当缓冲区满时，向流写入数据
+		_IOLBF（行缓冲）：每次从流中读入一行数据或向流中写入一行数据
+		_IONBF（无缓冲）：直接从流中读入数据或直接向流中写入数据，而没有缓冲区
+		*/
+		//不使用文件流缓冲，直接从管道I/O
+	  	setvbuf(f, NULL, _IONBF, 0);
+	  	speed = 0;
+          	failed = 0;
+          	bytes = 0;
+		
+	  	while(1)
+	  	{
+			//fscanf是从一个流中格式化读入数据，类似于scanf，scanf是从终端输入，fscanf是从流读取
+			//正常情况下，一个子进程会向管道写三个参数，父进程也会收到三个参数
+			pid=fscanf(f, "%d %d %d", &i, &j, &k);
 		  if(pid<2)
                   {
                        fprintf(stderr,"Some of our childrens died.\n");
@@ -491,7 +508,7 @@ static int bench(void)
 		  bytes+=k;
 		  /* fprintf(stderr,"*Knock* %d %d read=%d\n",speed,failed,pid); */
 		  if(--clients==0) break;
-	  }
+	  	}
 	  fclose(f);
 
   printf("\nSpeed=%d pages/min, %d bytes/sec.\nRequests: %d susceed, %d failed.\n",
