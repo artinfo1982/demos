@@ -498,24 +498,24 @@ static int bench(void)
 			//fscanf是从一个流中格式化读入数据，类似于scanf，scanf是从终端输入，fscanf是从流读取
 			//正常情况下，一个子进程会向管道写三个参数，父进程也会收到三个参数
 			pid=fscanf(f, "%d %d %d", &i, &j, &k);
-		  if(pid<2)
-                  {
-                       fprintf(stderr,"Some of our childrens died.\n");
-                       break;
-                  }
-		  speed+=i;
-		  failed+=j;
-		  bytes+=k;
-		  /* fprintf(stderr,"*Knock* %d %d read=%d\n",speed,failed,pid); */
-		  if(--clients==0) break;
+		  	if (pid < 2)
+                  	{
+                       		fprintf(stderr, "Some of our childrens died.\n");
+                       		break;
+                  	}
+		  	speed += i;
+		  	failed += j;
+		  	bytes += k;
+			//把所有client都统计，直到最后一个client
+		  	if(--clients == 0)
+				break;
 	  	}
-	  fclose(f);
-
-  printf("\nSpeed=%d pages/min, %d bytes/sec.\nRequests: %d susceed, %d failed.\n",
-		  (int)((speed+failed)/(benchtime/60.0f)),
-		  (int)(bytes/(float)benchtime),
-		  speed,
-		  failed);
-  }
-  return i;
+	  	fclose(f);
+  		printf("\nSpeed=%d pages/min, %d bytes/sec.\nRequests: %d susceed, %d failed.\n", 
+			(int)((speed+failed)/(benchtime/60.0f)),
+			(int)(bytes/(float)benchtime),
+		  	speed,
+		  	failed);
+  	}
+  	return i;
 }
