@@ -511,11 +511,11 @@ static int bench(void)
 				break;
 	  	}
 	  	fclose(f);
-  		printf("\nSpeed=%d pages/min, %d bytes/sec.\nRequests: %d susceed, %d failed.\n", 
-			(int)((speed+failed)/(benchtime/60.0f)),
-			(int)(bytes/(float)benchtime),
-		  	speed,
-		  	failed);
+  		printf("\nPerformance = %.2f throughput/sec, %.2f bytes/sec.\nTotal: %d success, %d fail.\n", 
+			(double)(success / (double)benchtime),
+			(double)(bytes / (double)benchtime),
+		  	success,
+		  	fail);
   	}
   	return i;
 }
