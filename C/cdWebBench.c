@@ -1,5 +1,8 @@
 /*
 修改自webbench
+webbench是一款公认的优秀的性能测试工具，可以在这里下载；
+http://home.tiscali.cz/~cz210552/distfiles/webbench-1.5.tar.gz
+
 修改点：
 1.只支持http 1.1
 2.增加对POST、PUT、DELETE的支持
