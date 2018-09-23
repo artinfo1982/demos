@@ -538,51 +538,66 @@ void benchcore(const char *host, const int port, const char *req)
 	//信号定义结构体
 	struct sigaction sa;
 
- /* setup alarm signal handler */
- sa.sa_handler=alarm_handler;
- sa.sa_flags=0;
- if(sigaction(SIGALRM,&sa,NULL))
-    exit(3);
- alarm(benchtime);
-
- rlen=strlen(req);
- nexttry:while(1)
- {
-    if(timerexpired)
-    {
-       if(failed>0)
-       {
-          /* fprintf(stderr,"Correcting failed by signal\n"); */
-          failed--;
-       }
-       return;
-    }
-    s=Socket(host,port);                          
-    if(s<0) { failed++;continue;} 
-    if(rlen!=write(s,req,rlen)) {failed++;close(s);continue;}
-    if(http10==0) 
-	    if(shutdown(s,1)) { failed++;close(s);continue;}
-    if(force==0) 
-    {
-            /* read all available data from socket */
-	    while(1)
-	    {
-              if(timerexpired) break; 
-	      i=read(s,buf,1500);
-              /* fprintf(stderr,"%d\n",i); */
-	      if(i<0) 
-              { 
-                 failed++;
-                 close(s);
-                 goto nexttry;
-              }
-	       else
-		       if(i==0) break;
-		       else
-			       bytes+=i;
-	    }
-    }
-    if(close(s)) {failed++;continue;}
-    speed++;
- }
+	/* setup alarm signal handler */
+	sa.sa_handler = alarm_handler;
+	sa.sa_flags = 0;
+	//如果收到定时器到时的信号，该进程就退出
+	if (sigaction(SIGALRM, &sa, NULL))
+		exit(3);
+	alarm(benchtime);
+ 	rlen = strlen(req);
+ nexttry:
+	//死循环收发消息，直至进程退出
+	while(1)
+ 	{
+		//计时器到时
+		if (timerexpired)
+		{
+			if (fail > 0)
+				//计时器到时引起的最后一次失败已没有意义，删除
+				fail--;
+			return;
+		}
+    		s = Socket(host, porfail t);
+		//创建socket失败
+    		if (s < 0)
+		{
+			fail++;
+			continue;
+		} 
+    		if (rlen != write(s, req, rlen))
+		{
+			fail++;
+			close(s);
+			continue;
+		}
+		//force=0强制需要等待服务器返回，force=1不等待服务器返回直接关闭socket
+    		if (force == 0)
+    		{
+            		/* read all available data from socket */
+	    		while(1)
+	    		{
+              			if (timerexpired)
+					break; 
+	      			i = read(s, buf, READ_BUF_SIZE);
+	      			if (i < 0)
+              			{ 
+                 			fail++;
+                	 		close(s);
+                 			goto nexttry;
+              			}
+	       			else if (i == 0)
+					break;
+		       		else
+			       		bytes += i;
+	    		}
+    		}
+		//直接关闭socket
+    		if (close(s))
+		{
+			fail++;
+			continue;
+		}
+    		success++;
+ 	}
 }
