@@ -519,3 +519,70 @@ static int bench(void)
   	}
   	return i;
 }
+
+void benchcore(const char *host, const int port, const char *req)
+{
+	int rlen;
+	char buf[READ_BUF_SIZE];
+	int s, i;
+	/*
+	#include <signal.h>
+	struct sigaction {
+		void (*sa_handler)(int);
+		void (*sa_sigaction)(int, siginfo_t *, void *);
+		sigset_t sa_mask;
+		int sa_flags;
+		void (*sa_restorer)(void);
+	};
+	*/
+	//信号定义结构体
+	struct sigaction sa;
+
+ /* setup alarm signal handler */
+ sa.sa_handler=alarm_handler;
+ sa.sa_flags=0;
+ if(sigaction(SIGALRM,&sa,NULL))
+    exit(3);
+ alarm(benchtime);
+
+ rlen=strlen(req);
+ nexttry:while(1)
+ {
+    if(timerexpired)
+    {
+       if(failed>0)
+       {
+          /* fprintf(stderr,"Correcting failed by signal\n"); */
+          failed--;
+       }
+       return;
+    }
+    s=Socket(host,port);                          
+    if(s<0) { failed++;continue;} 
+    if(rlen!=write(s,req,rlen)) {failed++;close(s);continue;}
+    if(http10==0) 
+	    if(shutdown(s,1)) { failed++;close(s);continue;}
+    if(force==0) 
+    {
+            /* read all available data from socket */
+	    while(1)
+	    {
+              if(timerexpired) break; 
+	      i=read(s,buf,1500);
+              /* fprintf(stderr,"%d\n",i); */
+	      if(i<0) 
+              { 
+                 failed++;
+                 close(s);
+                 goto nexttry;
+              }
+	       else
+		       if(i==0) break;
+		       else
+			       bytes+=i;
+	    }
+    }
+    if(close(s)) {failed++;continue;}
+    speed++;
+ }
+}
