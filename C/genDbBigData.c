@@ -35,16 +35,16 @@ int main(int argc, char *argv[])
     return 1;
   }
   
-  long loop = atol(argv[1]);
-  long u_len = atol(argv[2]);
-  long u_num = atol(argv[3]);
-  long all_unit_len = (u_len + 1) * u_num;
+  unsigned long loop = atol(argv[1]);
+  unsigned long u_len = atol(argv[2]);
+  unsigned long u_num = atol(argv[3]);
+  unsigned long all_unit_len = (u_len + 1) * u_num;
   char *file = argv[4];
-  long i;
-  int index_len;
-  long row_len;
-  int fd = -1, ret = -1;
-  long offset = 0L;
+  unsigned long i;
+  unsigned int index_len;
+  unsigned long row_len;
+  unsigned int fd = -1, ret = -1;
+  unsigned long offset = 0L;
   
   if ((fd = open(file, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR)) < 0)
   {
@@ -70,6 +70,24 @@ int main(int argc, char *argv[])
   {
     index_len = digit(i);
     memset(p_row, 0x0, all_unit_len + 256);
-    sprintf(p_row, "");
+    sprintf(p_row, "%ld%s\n", i, p_all_unit);
+    row_len - index + all_unit_len + 1;
+    if ((ret = pwrite(fd, p_row, row_len, offset)) < 0)
+    {
+      prinntf("pwrite error, pls check!\n");
+      return 1;
+    }
+    offset += row_len;
+    if (i % (loop / 10) == 0)
+      printf("finished %ld\n", i);
   }
+  close(fd);
+  free(p_unit);
+  free(p_all_unit);
+  free(p_row);
+  p_unit = NULL;
+  p_all_unit = NULL;
+  p_row = NULL;
+  
+  return 0;
 }
