@@ -230,3 +230,19 @@ https://github.com/artinfo1982/demos/blob/master/mysql/migrate/mod_ibd.c
 8.将临时目录中所有的ibd文件都复制到B相应的目录中
 9.启动B
 ```
+
+## mysql直接导入本地txt文件完成快速数据预置
+1.创建表
+```text
+create table a (id int, name varchar2(50));
+```
+2.创建一个txt文件，例如/home/data.txt，写入文本，可以手工写入，也可以程序写入，示例：
+```text
+1,a
+2,b
+3,c
+```
+3.在mysql中执行如下命令
+```text
+load data local infile "/home/data.txt" into table a fields terminated by ',';
+```
