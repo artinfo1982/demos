@@ -64,9 +64,12 @@ int main(int argc, char *argv[])
   for (i=0; i<u_num; i++)
     memcpy(p_all_unit + (u_len + 1) * i, p_unit, u_len + 1);
   
+  char *p_row = (char *)malloc((all_unit_len + 256) * sizeof(char));
   
-  
-  
-  
-  
+  for (i=1; i<=loop; i++)
+  {
+    index_len = digit(i);
+    memset(p_row, 0x0, all_unit_len + 256);
+    sprintf(p_row, "");
+  }
 }
