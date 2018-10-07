@@ -16,4 +16,23 @@
 
 int digit(long number)
 {
+  long n = number;
+  int count = 0;
+  while (n != 0)
+  {
+    n /= 10;
+    count++;
+  }
+  return count;
+}
+
+int main(int argc, char *argv[])
+{
+  if (argc != 5)
+  {
+    printf("Params Error! Usage: %s loopNumber unitLength unitNumber outputFile\n", argv[0]);
+    printf("Example: %s 100000000 100 100 /home/aaa/out.txt\n", argv[0]);
+    return 1;
+  }
+  
 }
