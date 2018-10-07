@@ -35,9 +35,24 @@ int main(int argc, char *argv[])
     return 1;
   }
   
-  unsigned long loop = atol(argv[1]);
-  unsigned long u_len = atol(argv[2]);
-  unsigned long u_num = atol(argv[3]);
+  long loop = atol(argv[1]);
+  if (loop <= 0)
+  {
+    printf("loopNumber must greater than 0\n");
+    return 1;
+  }
+  long u_len = atol(argv[2]);
+  if (u_len <= 0)
+  {
+    printf("unitLength must greater than 0\n");
+    return 1;
+  }
+  long u_num = atol(argv[3]);
+  if (u_num <= 0)
+  {
+    printf("unitNumber must greater than 0\n");
+    return 1;
+  }
   unsigned long all_unit_len = (u_len + 1) * u_num;
   char *file = argv[4];
   unsigned long i;
