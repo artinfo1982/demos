@@ -73,3 +73,11 @@ int *class_array;
 int *x_array;
 int *y_array;
 
+//创建一个画图的矩形框
+IplImage *create_plate_image(int width, int height)
+{
+  return cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 3);
+}
+
+//初始化需要的字体
+void init_zhs_eng_font()
