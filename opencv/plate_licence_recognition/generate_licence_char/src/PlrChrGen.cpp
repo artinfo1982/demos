@@ -80,4 +80,8 @@ IplImage *create_plate_image(int width, int height)
 }
 
 //初始化需要的字体
-void init_zhs_eng_font()
+void init_zhs_eng_font(const char *zhs_font_file, const char *eng_font_file)
+{
+  zhs_font = new CvxText(zhs_font_file);
+  eng_font = new CvxText(eng_font_file);
+}
