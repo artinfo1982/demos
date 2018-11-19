@@ -2,7 +2,14 @@
 
 int main(int argc, char **argv)
 {
-	int i, j, index = 0;
+	if (argc != 3)
+	{
+		printf("ERROR, usage: %s beginIndex numPerImg\n", argv[0]);
+		exit(1);
+	}
+	int index = atoi(argv[1]);
+	int numPerImg = atoi(argv[2]);
+	int i, j;
 	init_zhs_eng_font("/home/cd/plr/font/platech.ttf", "/home/cd/plr/font/platechar.ttf");
 	init_image_rect_memory();
 	init_image_rect_color();
@@ -23,7 +30,7 @@ int main(int argc, char **argv)
 	{
 		memset(bg_name, 0x0, 128);
 		sprintf(bg_name, "%s%d%s", "/home/cd/plr/background/bg_", i, ".jpg");
-		for (j = 0; j < 16; ++j)
+		for (j = 0; j < numPerImg; ++j)
 		{
 			memset(jpg_name, 0x0, 128);
 			memset(xml_name, 0x0, 128);
