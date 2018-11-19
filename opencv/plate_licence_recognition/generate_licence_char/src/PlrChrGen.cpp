@@ -17,4 +17,22 @@ const char chr_zhs_4[2][4] = {"使", "领"};
 //纯数字
 const char chr_eng_1[10][2] = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"};
 //英文+数字
-const char chr_eng_2[34][2] = {};
+const char chr_eng_2[34][2] = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F", "G", "H", 
+                              "J", "K", "L", "M", "N", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"};
+//纯英文字母
+const char chr_eng_3[24][2] = {"A", "B", "C", "D", "E", "F", "G", "H", "J", "K", "L", "M", "N", "P", "Q", "R", "S", "T", 
+                               "U", "V", "W", "X", "Y", "Z"};
+
+//蓝色像素（小轿车），BGR顺序
+CvScalar blue_pixel = CvScalar(132, 20, 8);
+//绿色像素（新能源），BGR顺序
+CvScalar blue_pixel = CvScalar(123, 242, 49);
+//黄色像素1（大型客货车），BGR顺序
+CvScalar blue_pixel = CvScalar(0, 168, 216);
+//黄色像素2（小型货车），BGR顺序
+CvScalar blue_pixel = CvScalar(0, 245, 255);
+//白色像素（军警），BGR顺序
+CvScalar blue_pixel = CvScalar(255, 255, 255);
+//黑色像素（使领馆），BGR顺序
+CvScalar blue_pixel = CvScalar(0, 0, 0);
+
