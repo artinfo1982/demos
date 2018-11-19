@@ -36,3 +36,40 @@ CvScalar blue_pixel = CvScalar(255, 255, 255);
 //黑色像素（使领馆），BGR顺序
 CvScalar blue_pixel = CvScalar(0, 0, 0);
 
+//背景图片
+IplImage *bg;
+//蓝牌初始框，30x30
+IplImage *blue_img_1;
+//蓝牌缩放框，25x35
+IplImage *blue_img_1;
+//普通黄牌初始框，30x30
+IplImage *yellow_a_img_1;
+//普通黄牌缩放框，25x35
+IplImage *yellow_a_img_2;
+//小黄牌初始框，30x30
+IplImage *yellow_b_img_1;
+//小黄牌缩放框，25x35
+IplImage *yellow_b_img_2;
+//绿牌初始框，30x30
+IplImage *green_img_1;
+//绿牌缩放框，25x35
+IplImage *green_img_2;
+//白牌初始框，30x30
+IplImage *white_img_1;
+//白牌缩放框，25x35
+IplImage *white_img_2;
+//黑牌初始框，30x30
+IplImage *black_img_1;
+//黑牌缩放框，25x35
+IplImage *black_img_2;
+
+CvxText *zhs_font;
+CvxText *eng_font;
+
+char *p;
+char *buf;
+int total_block_num;
+int *class_array;
+int *x_array;
+int *y_array;
+
