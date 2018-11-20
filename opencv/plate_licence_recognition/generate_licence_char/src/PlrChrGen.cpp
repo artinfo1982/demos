@@ -90,17 +90,17 @@ void init_zhs_eng_font(const char *zhs_font_file, const char *eng_font_file)
 void init_image_rect_memory()
 {
   blue_img_1 = create_plate_image(RECT_WIDTH_INIT, RECT_HEIGHT_INIT);
-  blue_img_2 = create_plate_image(RECT_WIDTH_INIT, RECT_HEIGHT_INIT);
+  blue_img_2 = create_plate_image(RECT_WIDTH_SCALE, RECT_HEIGHT_SCALE);
   yellow_a_img_1 = create_plate_image(RECT_WIDTH_INIT, RECT_HEIGHT_INIT);
-  yellow_a_img_2 = create_plate_image(RECT_WIDTH_INIT, RECT_HEIGHT_INIT);
+  yellow_a_img_2 = create_plate_image(RECT_WIDTH_SCALE, RECT_HEIGHT_SCALE);
   yellow_b_img_1 = create_plate_image(RECT_WIDTH_INIT, RECT_HEIGHT_INIT);
-  yellow_b_img_2 = create_plate_image(RECT_WIDTH_INIT, RECT_HEIGHT_INIT);
+  yellow_b_img_2 = create_plate_image(RECT_WIDTH_SCALE, RECT_HEIGHT_SCALE);
   green_img_1 = create_plate_image(RECT_WIDTH_INIT, RECT_HEIGHT_INIT);
-  green_img_2 = create_plate_image(RECT_WIDTH_INIT, RECT_HEIGHT_INIT);
+  green_img_2 = create_plate_image(RECT_WIDTH_SCALE, RECT_HEIGHT_SCALE);
   white_img_1 = create_plate_image(RECT_WIDTH_INIT, RECT_HEIGHT_INIT);
-  white_img_2 = create_plate_image(RECT_WIDTH_INIT, RECT_HEIGHT_INIT);
+  white_img_2 = create_plate_image(RECT_WIDTH_SCALE, RECT_HEIGHT_SCALE);
   black_img_1 = create_plate_image(RECT_WIDTH_INIT, RECT_HEIGHT_INIT);
-  black_img_2 = create_plate_image(RECT_WIDTH_INIT, RECT_HEIGHT_INIT);
+  black_img_2 = create_plate_image(RECT_WIDTH_SCALE, RECT_HEIGHT_SCALE);
 }
 
 void release_all()
@@ -260,3 +260,192 @@ void add_warp_affine(IplImage *src, CvScalar &scalar)
   cvCopy(dst, src);
   cvReleaseImage(&dst);
 }
+
+//将文字覆盖到矩形框内，并缩放矩形框达到预设的效果
+void put_char_into_rect_and_resize(CvScalar &scalar, CvText *font, int size, IplImage *src, IplImae *dst, const char *chr, int x, int y, int red, int green, int blue)
+{
+  IplImage *a = create_plate_image(RECT_WIDTH_INIT, RECT_HEIGHT_INIT);
+  cvCopy(src, a, NULL);
+  CvScalar font_size = cvScalar(size, 0, 0, 0);
+  font->setFont(NULL, &font_size, NULL, NULL);
+  font->putText(a, chr, cvPoint(x, y), CV_RGB(red, green, blue));
+  add_gauss_noise(a);
+  add_warp_affine(a, scalar);
+  cvResize(a, dst, CV_INTER_LINEAR);
+  cvReleaseImage(&a);
+}
+
+//将车牌图片嵌到原始图片中
+void insert_plateImg_into_srcImg(int x, int y, int width, int height, IplImage *src, IplImage *plr)
+{
+  CvRect rect = cvRect(x, y, width, height);
+  cvSetImageROI(src, rect);
+  cvCopy(plr, src, NULL);
+  cvResetImageROI(src);
+  cvZero(plr);
+}
+
+int class_parser(const char *class_str)
+{
+  if (0 == strcmp(class_str, "京"))
+    return 1;
+  else if (0 == strcmp(class_str, "沪"))
+    return 2;
+  else if (0 == strcmp(class_str, "津"))
+    return 3;
+  else if (0 == strcmp(class_str, "渝"))
+    return 4;
+  else if (0 == strcmp(class_str, "冀"))
+    return 5;
+  else if (0 == strcmp(class_str, "晋"))
+    return 6;
+  else if (0 == strcmp(class_str, "蒙"))
+    return 7;
+  else if (0 == strcmp(class_str, "辽"))
+    return 8;
+  else if (0 == strcmp(class_str, "吉"))
+    return 9;
+  else if (0 == strcmp(class_str, "黑"))
+    return 10;
+  else if (0 == strcmp(class_str, "苏"))
+    return 11;
+  else if (0 == strcmp(class_str, "浙"))
+    return 12;
+  else if (0 == strcmp(class_str, "皖"))
+    return 13;
+  else if (0 == strcmp(class_str, "闽"))
+    return 14;
+  else if (0 == strcmp(class_str, "赣"))
+    return 15;
+  else if (0 == strcmp(class_str, "鲁"))
+    return 16;
+  else if (0 == strcmp(class_str, "豫"))
+    return 17;
+  else if (0 == strcmp(class_str, "鄂"))
+    return 18;
+  else if (0 == strcmp(class_str, "湘"))
+    return 19;
+  else if (0 == strcmp(class_str, "粤"))
+    return 20;
+  else if (0 == strcmp(class_str, "桂"))
+    return 21;
+  else if (0 == strcmp(class_str, "琼"))
+    return 22;
+  else if (0 == strcmp(class_str, "川"))
+    return 23;
+  else if (0 == strcmp(class_str, "贵"))
+    return 24;
+  else if (0 == strcmp(class_str, "云"))
+    return 25;
+  else if (0 == strcmp(class_str, "藏"))
+    return 26;
+  else if (0 == strcmp(class_str, "陕"))
+    return 27;
+  else if (0 == strcmp(class_str, "甘"))
+    return 28;
+  else if (0 == strcmp(class_str, "青"))
+    return 29;
+  else if (0 == strcmp(class_str, "宁"))
+    return 30;
+  else if (0 == strcmp(class_str, "新"))
+    return 31;
+  else if (0 == strcmp(class_str, "0"))
+    return 32;
+  else if (0 == strcmp(class_str, "1"))
+    return 33;
+  else if (0 == strcmp(class_str, "2"))
+    return 34;
+  else if (0 == strcmp(class_str, "3"))
+    return 35;
+  else if (0 == strcmp(class_str, "4"))
+    return 36;
+  else if (0 == strcmp(class_str, "5"))
+    return 37;
+  else if (0 == strcmp(class_str, "6"))
+    return 38;
+  else if (0 == strcmp(class_str, "7"))
+    return 39;
+  else if (0 == strcmp(class_str, "8"))
+    return 40;
+  else if (0 == strcmp(class_str, "9"))
+    return 41;
+  else if (0 == strcmp(class_str, "A"))
+    return 42;
+  else if (0 == strcmp(class_str, "B"))
+    return 43;
+  else if (0 == strcmp(class_str, "C"))
+    return 44;
+  else if (0 == strcmp(class_str, "D"))
+    return 45;
+  else if (0 == strcmp(class_str, "E"))
+    return 46;
+  else if (0 == strcmp(class_str, "F"))
+    return 47;
+  else if (0 == strcmp(class_str, "G"))
+    return 48;
+  else if (0 == strcmp(class_str, "H"))
+    return 49;
+  else if (0 == strcmp(class_str, "J"))
+    return 50;
+  else if (0 == strcmp(class_str, "K"))
+    return 51;
+  else if (0 == strcmp(class_str, "L"))
+    return 52;
+  else if (0 == strcmp(class_str, "M"))
+    return 53;
+  else if (0 == strcmp(class_str, "N"))
+    return 54;
+  else if (0 == strcmp(class_str, "P"))
+    return 55;
+  else if (0 == strcmp(class_str, "Q"))
+    return 56;
+  else if (0 == strcmp(class_str, "R"))
+    return 57;
+  else if (0 == strcmp(class_str, "S"))
+    return 58;
+  else if (0 == strcmp(class_str, "T"))
+    return 59;
+  else if (0 == strcmp(class_str, "U"))
+    return 60;
+  else if (0 == strcmp(class_str, "V"))
+    return 61;
+  else if (0 == strcmp(class_str, "W"))
+    return 62;
+  else if (0 == strcmp(class_str, "X"))
+    return 63;
+  else if (0 == strcmp(class_str, "Y"))
+    return 64;
+  else if (0 == strcmp(class_str, "Z"))
+    return 65;
+  else if (0 == strcmp(class_str, "学"))
+    return 66;
+  else if (0 == strcmp(class_str, "军"))
+    return 67;
+  else if (0 == strcmp(class_str, "沈"))
+    return 68;
+  else if (0 == strcmp(class_str, "北"))
+    return 69;
+  else if (0 == strcmp(class_str, "兰"))
+    return 70;
+  else if (0 == strcmp(class_str, "南"))
+    return 71;
+  else if (0 == strcmp(class_str, "广"))
+    return 72;
+  else if (0 == strcmp(class_str, "成"))
+    return 73;
+  else if (0 == strcmp(class_str, "警"))
+    return 74;
+  else if (0 == strcmp(class_str, "济"))
+    return 75;
+  else if (0 == strcmp(class_str, "空"))
+    return 76;
+  else if (0 == strcmp(class_str, "海"))
+    return 77;
+  else if (0 == strcmp(class_str, "使"))
+    return 78;
+  else if (0 == strcmp(class_str, "领"))
+    return 79;
+  else
+    return -1;
+}
+
