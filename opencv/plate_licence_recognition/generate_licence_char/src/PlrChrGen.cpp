@@ -146,4 +146,117 @@ void init_imae_rect_color()
 //生成高斯噪声
 double generate_gaussian_noise(double mu, double sigma)
 {
+  double epsilon = std::numeric_limits<double>::min();
+  double z0, z1;
+  bool flag = false;
+  flag = !flag;
+  if (!flag)
+    return z1 * sigma + mu;
+  double u1, u2;
+  do
+  {
+    u1 = rand() * (1.0 / RAND_MAX);
+    u2 = rand() * (1.0 / RAND_MAX);
+  } while (u1 <= epsilon);
+  z0 = sqrt(-2.0 * log(u1)) * cos(2 * CV_PI * u2);
+  z1 = sqrt(-2.0 * log(u1)) * sin(2 * CV_PI * u2);
+  return z1 * sigma + mu;
+}
+
+//为车牌文字框添加高斯白噪声
+void add_gauss_noise(IplImage *src)
+{
+  int i, j, k, val, tmp;
+  int z1, z3;
+  double z2;
+  struct timeval tv;
+  CvScalar s;
+  int w = src->width;
+  int h = src->height;
+  IplImage *a = create_plate_imae(w, h);
+  for (i = 0; i < w; ++i)
+  {
+    for (j = 0; j < h; ++j)
+    {
+      s = cvGet2D(a, i, j);
+      for (k = 0; k < 3; ++k)
+      {
+        gettimeofday(&tv, NULL);
+        srand(tv.tv_sec + tv.tv_usec);
+        z1 = rand() % 2;
+        z2 = rand() % 10 / (double)10;
+        z3 = rand() % 32;
+        tmp = s.val[k] + generate_gaussian_noise(z1, z2) * z3;
+        if (tmp < 0)
+          tmp = 0;
+        if (tmp > 255)
+          tmp = 255;
+        s.val[k] = (uchar)tmp;
+      }
+      cvSet2D(a, i, j, s);
+    }
+  }
+  cvCopy(a, src, NULL);
+  cvReleaseImage(&a);
+}
+
+//为车牌文字框添加形变
+void add_warp_affine(IplImage *src, CvScalar &scalar)
+{
+  struct timeval tv;
+  int w, h, a, b;
+  double angle = 0.0;
+  double scale = 1;
+  double c;
+  w = src->width;
+  h = src->height;
+  IplImage *dst = create_plate_image(w, h);
+  CvPoint2D32f center = cvPoint2D32f(w / 2, h / 2);
+  CvMat *rot_mat = cvCreateMat(2, 3, CV_32FC1);
+  gettimeofday(&tv, NULL);
+  srand(tv.tv_sec + tv.tv_usec);
+  a = rand() % 10;
+  b = rand() % 2;
+  c = rand() % 11 / (double)10;
+  if (a < 5)
+    angle = 0.0;
+  else if (a < 6)
+    angle = 10.0;
+  else if (a < 7)
+    angle = 20.0;
+  else if (a < 8)
+    angle = 30.0;
+  else if (a < 9)
+    angle = 40.0;
+  else
+    angle = 50.0;
+  switch(b)
+  {
+    case 0:
+      {
+        if (angle < 0)
+          angle *= -1;
+        break;
+      }
+    case 1:
+      {
+        if (angle > 0)
+          angle *= -1;
+        break;
+      }
+    default:
+      break;
+  }
+  if (c <= 0.7)
+    scale = 1;
+  else if (c <= 0.8)
+    scale = 0.9;
+  else if (c <= 0.9)
+    scale = 0.8;
+  else
+    scale = 0.7;
+  cv2DRotationMatrix(center, angle, scale, rot_mat);
+  cvWarpAffine(src, dst, rot_mat, 9, scalar);
+  cvCopy(dst, src);
+  cvReleaseImage(&dst);
 }
