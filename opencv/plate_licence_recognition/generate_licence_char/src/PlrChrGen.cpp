@@ -85,3 +85,65 @@ void init_zhs_eng_font(const char *zhs_font_file, const char *eng_font_file)
   zhs_font = new CvxText(zhs_font_file);
   eng_font = new CvxText(eng_font_file);
 }
+
+//初始化各矩形框内存分配
+void init_image_rect_memory()
+{
+  blue_img_1 = create_plate_image(RECT_WIDTH_INIT, RECT_HEIGHT_INIT);
+  blue_img_2 = create_plate_image(RECT_WIDTH_INIT, RECT_HEIGHT_INIT);
+  yellow_a_img_1 = create_plate_image(RECT_WIDTH_INIT, RECT_HEIGHT_INIT);
+  yellow_a_img_2 = create_plate_image(RECT_WIDTH_INIT, RECT_HEIGHT_INIT);
+  yellow_b_img_1 = create_plate_image(RECT_WIDTH_INIT, RECT_HEIGHT_INIT);
+  yellow_b_img_2 = create_plate_image(RECT_WIDTH_INIT, RECT_HEIGHT_INIT);
+  green_img_1 = create_plate_image(RECT_WIDTH_INIT, RECT_HEIGHT_INIT);
+  green_img_2 = create_plate_image(RECT_WIDTH_INIT, RECT_HEIGHT_INIT);
+  white_img_1 = create_plate_image(RECT_WIDTH_INIT, RECT_HEIGHT_INIT);
+  white_img_2 = create_plate_image(RECT_WIDTH_INIT, RECT_HEIGHT_INIT);
+  black_img_1 = create_plate_image(RECT_WIDTH_INIT, RECT_HEIGHT_INIT);
+  black_img_2 = create_plate_image(RECT_WIDTH_INIT, RECT_HEIGHT_INIT);
+}
+
+void release_all()
+{
+  cvReleaseImage(&blue_img_1);
+  cvReleaseImage(&blue_img_2);
+  cvReleaseImage(&yellow_a_img_1);
+  cvReleaseImage(&yellow_a_img_2);
+  cvReleaseImage(&yellow_b_img_1);
+  cvReleaseImage(&yellow_b_img_2);
+  cvReleaseImage(&green_img_1);
+  cvReleaseImage(&green_img_2);
+  cvReleaseImage(&white_img_1);
+  cvReleaseImage(&white_img_2);
+  cvReleaseImage(&black_img_1);
+  cvReleaseImage(&black_img_2);
+}
+
+//给画图矩形框预设颜色
+void set_image_color(IplImage *img, CvScalar &pixel)
+{
+  int i, j, w, h;
+  w = img->width;
+  h = img->height;
+  for (i = 0; i < h; ++i)
+  {
+    for (j = 0; j < w; ++j)
+      cvSet2D(img, i, j, pixel);
+  }
+}
+
+//初始化各矩形框的颜色
+void init_imae_rect_color()
+{
+  set_image_color(blue_img_1, blue_pixel);
+  set_image_color(yellow_a_img_1, yellow_pixel_1);
+  set_image_color(yellow_b_img_1, yellow_pixel_2);
+  set_image_color(green_img_1, green_pixel);
+  set_image_color(white_img_1, white_pixel);
+  set_image_color(black_img_1, black_pixel);
+}
+
+//生成高斯噪声
+double generate_gaussian_noise(double mu, double sigma)
+{
+}
