@@ -449,3 +449,47 @@ int class_parser(const char *class_str)
     return -1;
 }
 
+int write_label_xml(const char *filename, int index)
+{
+  int fd = -1, len, size, ret;
+  if ((fd = open(filename, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR)) < 0)
+  {
+    printf("ERROR, can not open voc xml file: %s\n", filename);
+    exit(1);
+  }
+  memset(p, 0x0, total_block_num * 200 + 300);
+  memset(buf, 0x0, 512);
+  char *p1 = p;
+  int *_x = x_array;
+  int *_y = y_array;
+  int *_z = class_array;
+  sprintf(buf, "%s%d%s%d%s", XML_A, index, XML_B, index, XML_C);
+  len = strlen(buf);
+  memcpy(p1, buf, len);
+  p1 += len;
+  int i;
+  for (i = 0; i < total_block_num; ++i)
+  {
+    memset(buf, 0x0, 512);
+    sprintf(buf, "%s%d%s%d%s%d%s%d%s%d%s", XML_LOOP_A, *(_z + i), XML_LOOP_B, *(_x + i), XML_LOOP_C, 
+           *(_y + i), XML_LOOP_D, *(_x + i) + 25, XML_LOOP_E, *(_y + i) + 35, XML_LOOP_F);
+    len = strlen(buf);
+    memcpy(p1, buf, len);
+    p1 += len;
+  }
+  memset(buf, 0x0, 512);
+  sprintf(buf, "%s", XML_D);
+  len = strlen(buf);
+  memcpy(p1, buf, len);
+  p1 += len;
+  size = strlen(p);
+  if ((ret = write(fd, p, size)) < 0)
+  {
+    printf("ERROR, write voc xml file failed, write size is incorrect: %s\n", filename);
+    close(fd);
+    exit(1);
+  }
+  close(fd);
+  return 0;
+}
+
