@@ -744,10 +744,14 @@ void process_single_background_image(const char *inputFile, int block_num, const
               default:
                 break;
             }
+            _z++;
             break;
           }
+        default:
+          break;
       }
     }
   }
+  cvSaveImage(outputFile, bg, 0);
+  cvReleaseImage(&bg);
 }
-
