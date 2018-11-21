@@ -262,7 +262,8 @@ void add_warp_affine(IplImage *src, CvScalar &scalar)
 }
 
 //将文字覆盖到矩形框内，并缩放矩形框达到预设的效果
-void put_char_into_rect_and_resize(CvScalar &scalar, CvText *font, int size, IplImage *src, IplImae *dst, const char *chr, int x, int y, int red, int green, int blue)
+void put_char_into_rect_and_resize(CvScalar &scalar, CvText *font, int size, IplImage *src, IplImae *dst, 
+                                   const char *chr, int x, int y, int red, int green, int blue)
 {
   IplImage *a = create_plate_image(RECT_WIDTH_INIT, RECT_HEIGHT_INIT);
   cvCopy(src, a, NULL);
@@ -491,5 +492,56 @@ int write_label_xml(const char *filename, int index)
   }
   close(fd);
   return 0;
+}
+
+//处理单张背景图片
+void process_single_background_image(const char *inputFile, int block_num, const char *outputFile)
+{
+  int i, j, plr_color, zeflag, font_color, x, y, idx;
+  int *_x, *_y, *_z;
+  _x = x_array;
+  _y = y_array;
+  _z = class_array;
+  struct timeval tv;
+  IplImage *bg = cvLoadImage(inputFile, -1);
+  if (bg->width != 512 || bg->height != 512)
+  {
+    printf("ERROR, input image size must be 512 x 512!\n");
+    exit(1);
+  }
+  for (i = 0; i < block_num; ++i)
+  {
+    for (j = 0; j < block_num; ++j)
+    {
+      //车牌颜色
+      plr_color = rand() % 100;
+      if (plr_color < 50)
+        plr_color = 0;
+      else if (plr_color < 80)
+        plr_color = 1;
+      else if (plr_color < 85)
+        plr_color = 2;
+      else if (plr_color < 90)
+        plr_color = 3;
+      else if (plr_color < 95)
+        plr_color = 4;
+      else
+        plr_color = 5;
+      //用汉字还是英文
+      zeflag = rand() % 2;
+      //字体颜色，白或者红
+      font_color = rand() % 2;
+      gettimeofday(&tv, NULL);
+      srand(tv.tv_sec + tv.tv_usec);
+      x = i * DIV_SIDE_LEN + rand() % COOR_RANGE;
+      if (x > 470)
+        x = 470;
+      gettimeofday(&tv, NULL);
+      srand(tv.tv_sec + tv.tv_usec);
+      y = j * DIV_SIDE_LEN + rand() % COOR_RANGE;
+      if (y > 470)
+        y = 470;
+    }
+  }
 }
 
