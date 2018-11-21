@@ -19,7 +19,7 @@ int main(int argc, char **argv)
 	char *jpg_name = (char *)malloc(128 * sizeof(char));
 	char *xml_name = (char *)malloc(128 * sizeof(char));
 
-	for (i = 1; i <= 50; ++i)
+	for (i = 1; i <= MAX_BG_FILE_NUM; ++i)
 	{
 		memset(bg_name, 0x0, 128);
 		sprintf(bg_name, "%s%d%s", "/home/cd/plr/background/bg_", i, ".jpg");
@@ -29,13 +29,11 @@ int main(int argc, char **argv)
 			memset(xml_name, 0x0, 128);
 			sprintf(jpg_name, "%s%d%s", "/home/cd/plr/imageset/train/", index, ".jpg");
 			sprintf(xml_name, "%s%d%s", "/home/cd/plr/xml/", index, ".xml");
-			process_single_background_image(bg_name, block_num, jpg_name);
+			process_single_background_image(bg_name, "/home/cd/plr/licence/", block_num, jpg_name);
 			write_label_xml(xml_name, index);
 			index++;
 		}
 	}
-	release_all();
-	free(p);
-	p = NULL;
+	
 	return 0;
 }
