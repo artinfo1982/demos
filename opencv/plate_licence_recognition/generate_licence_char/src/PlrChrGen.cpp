@@ -541,6 +541,69 @@ void process_single_background_image(const char *inputFile, int block_num, const
       y = j * DIV_SIDE_LEN + rand() % COOR_RANGE;
       if (y > 470)
         y = 470;
+      *_x = x;
+      _x++;
+      *_y = y;
+      _y++;
+      gettimeofday(&tv, NULL);
+      srand(tv.tv_sec + tv.tv_usec);
+      switch (plr_color)
+      {
+        //蓝牌，字体颜色白
+        case 0:
+          {
+            switch (zeflag)
+            {
+              //汉字
+              case 0:
+                idx = rand() % 31;
+                put_char_into_rect_and_resize(blue_pixel, zhs_font, ZHS_FONT_SIZE, blue_img_1, blue_img_2, 
+                                             chr_zhs_1[idx], ZHS_X_BEGIN, ZHS_Y_BEGIN, 255, 255, 255);
+                insert_plateImg_into_srcImg(x, y, 25, 35, bg, blue_img_2);
+                *_z = class_parser(chr_zhs_1[idx]);
+                break;
+              //英文
+              case 1:
+                idx = rand() % 34;
+                put_char_into_rect_and_resize(blue_pixel, eng_font, ENG_FONT_SIZE, blue_img_1, blue_img_2, 
+                                             chr_eng_2[idx], ENG_X_BEGIN, ENG_Y_BEGIN, 255, 255, 255);
+                insert_plateImg_into_srcImg(x, y, 25, 35, bg, blue_img_2);
+                *_z = class_parser(chr_eng_2[idx]);
+                break;
+              default:
+                break;
+            }
+            _z++;
+            break;
+          }
+        //普通黄牌，字体颜色黑
+        case 1:
+          {
+            switch (zeflag)
+            {
+              //汉字
+              case 0:
+                idx = rand() % 32;
+                put_char_into_rect_and_resize(yellow_pixel_1, zhs_font, ZHS_FONT_SIZE, yellow_a_img_1, yellow_a_img_2, 
+                                             chr_zhs_2[idx], ZHS_X_BEGIN, ZHS_Y_BEGIN, 0, 0, 0);
+                insert_plateImg_into_srcImg(x, y, 25, 35, bg, yellow_a_img_2);
+                *_z = class_parser(chr_zhs_2[idx]);
+                break;
+              //英文
+              case 1:
+                idx = rand() % 34;
+                put_char_into_rect_and_resize(yellow_pixel_1, eng_font, ENG_FONT_SIZE, yellow_a_img_1, yellow_a_img_2, 
+                                             chr_eng_2[idx], ENG_X_BEGIN, ENG_Y_BEGIN, 0, 0, 0);
+                insert_plateImg_into_srcImg(x, y, 25, 35, bg, yellow_a_img_2);
+                *_z = class_parser(chr_eng_2[idx]);
+                break;
+              default:
+                break;
+            }
+            _z++;
+            break;
+          }
+      }
     }
   }
 }
