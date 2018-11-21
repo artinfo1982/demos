@@ -20,6 +20,11 @@ grant all privileges on `cddb`.* to 'cd'@'%' identified by 'huawei';
 flush privileges;
 ```
 
+## 命令行中执行sql文件
+```shell
+MYSQL> source /home/cd/test.sql
+```
+
 ## 查看当前所有数据库
 ```text
 mysql> show databases;
