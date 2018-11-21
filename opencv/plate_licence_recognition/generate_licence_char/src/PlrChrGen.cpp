@@ -603,6 +603,149 @@ void process_single_background_image(const char *inputFile, int block_num, const
             _z++;
             break;
           }
+        //小黄牌，字体颜色黑
+        case 2:
+          {
+            switch (zeflag)
+            {
+              //汉字
+              case 0:
+                idx = rand() % 32;
+                put_char_into_rect_and_resize(yellow_pixel_2, zhs_font, ZHS_FONT_SIZE, yellow_b_img_1, yellow_b_img_2, 
+                                             chr_zhs_2[idx], ZHS_X_BEGIN, ZHS_Y_BEGIN, 0, 0, 0);
+                insert_plateImg_into_srcImg(x, y, 25, 35, bg, yellow_b_img_2);
+                *_z = class_parser(chr_zhs_2[idx]);
+                break;
+              //英文
+              case 1:
+                idx = rand() % 34;
+                put_char_into_rect_and_resize(yellow_pixel_2, eng_font, ENG_FONT_SIZE, yellow_b_img_1, yellow_b_img_2, 
+                                             chr_eng_2[idx], ENG_X_BEGIN, ENG_Y_BEGIN, 0, 0, 0);
+                insert_plateImg_into_srcImg(x, y, 25, 35, bg, yellow_b_img_2);
+                *_z = class_parser(chr_eng_2[idx]);
+                break;
+              default:
+                break;
+            }
+            _z++;
+            break;
+          }
+        //绿牌，字体颜色黑
+        case 3:
+          {
+            idx = rand() % 31;
+            switch (zeflag)
+            {
+              //汉字
+              case 0:
+                put_char_into_rect_and_resize(green_pixel, zhs_font, ZHS_FONT_SIZE, green_img_1, green_img_2, 
+                                             chr_zhs_1[idx], ZHS_X_BEGIN, ZHS_Y_BEGIN, 0, 0, 0);
+                insert_plateImg_into_srcImg(x, y, 25, 35, bg, green_img_2);
+                *_z = class_parser(chr_zhs_1[idx]);
+                break;
+              //英文
+              case 1:
+                put_char_into_rect_and_resize(green_pixel, eng_font, ENG_FONT_SIZE, green_img_1, green_img_2, 
+                                             chr_eng_2[idx], ENG_X_BEGIN, ENG_Y_BEGIN, 0, 0, 0);
+                insert_plateImg_into_srcImg(x, y, 25, 35, bg, green_img_2);
+                *_z = class_parser(chr_eng_2[idx]);
+                break;
+              default:
+                break;
+            }
+            _z++;
+            break;
+          }
+        //白牌，字体颜色红或者黑
+        case 4:
+          {
+            switch (zeflag)
+            {
+              //汉字，只能是红色
+              case 0:
+                idx = rand() % 12;
+                put_char_into_rect_and_resize(white_pixel, zhs_font, ZHS_FONT_SIZE, white_img_1, white_img_2, 
+                                             chr_zhs_3[idx], ZHS_X_BEGIN, ZHS_Y_BEGIN, 255, 0, 0);
+                insert_plateImg_into_srcImg(x, y, 25, 35, bg, white_img_2);
+                *_z = class_parser(chr_zhs_3[idx]);
+                break;
+              //英文，红色或者黑色
+              case 1:
+                {
+                  switch (font_color)
+                  {
+                    //红色
+                    case 0:
+                      idx = rand() % 24;
+                      put_char_into_rect_and_resize(white_pixel, eng_font, ENG_FONT_SIZE, white_img_1, white_img_2, 
+                                                   chr_eng_3[idx], ENG_X_BEGIN, ENG_Y_BEGIN, 255, 0, 0);
+                      insert_plateImg_into_srcImg(x, y, 25, 35, bg, white_img_2);
+                      *_z = class_parser(chr_eng_3[idx]);
+                      break;
+                    //黑色
+                    case 1:
+                      idx = rand() % 24;
+                      put_char_into_rect_and_resize(white_pixel, eng_font, ENG_FONT_SIZE, white_img_1, white_img_2, 
+                                                   chr_eng_3[idx], ENG_X_BEGIN, ENG_Y_BEGIN, 0, 0, 0);
+                      insert_plateImg_into_srcImg(x, y, 25, 35, bg, white_img_2);
+                      *_z = class_parser(chr_eng_3[idx]);
+                      break;
+                    default:
+                      break;
+                  }
+                  _z++;
+                  break;
+                }
+              default:
+                break;
+            }
+            break;
+          }
+        //黑牌，字体颜色红或者白
+        case 5:
+          {
+            switch (zeflag)
+            {
+              //汉字，红色（使、领这两个字）或者白色（省份简称）
+              case 0:
+                {
+                  switch (font_color)
+                  {
+                    //红色
+                    case 0:
+                      idx = rand() % 2;
+                      put_char_into_rect_and_resize(black_pixel, zhs_font, ZHS_FONT_SIZE, black_img_1, black_img_2, 
+                                                   chr_zhs_4[idx], ENG_X_BEGIN, ENG_Y_BEGIN, 255, 0, 0);
+                      insert_plateImg_into_srcImg(x, y, 25, 35, bg, black_img_2);
+                      *_z = class_parser(chr_zhs_4[idx]);
+                      break;
+                    //白色
+                    case 1:
+                      idx = rand() % 31;
+                      put_char_into_rect_and_resize(black_pixel, zhs_font, ZHS_FONT_SIZE, black_img_1, black_img_2, 
+                                                   chr_zhs_1[idx], ENG_X_BEGIN, ENG_Y_BEGIN, 255, 255, 255);
+                      insert_plateImg_into_srcImg(x, y, 25, 35, bg, black_img_2);
+                      *_z = class_parser(chr_zhs_1[idx]);
+                      break;
+                    default:
+                      break;
+                  }
+                  _z++;
+                  break;
+                }
+              //英文，只能是白色
+              case 1:
+                idx = rand() % 10;
+                put_char_into_rect_and_resize(black_pixel, eng_font, ENG_FONT_SIZE, black_img_1, black_img_2, 
+                                             chr_eng_1[idx], ENG_X_BEGIN, ENG_Y_BEGIN, 255, 255, 255);
+                insert_plateImg_into_srcImg(x, y, 25, 35, bg, black_img_2);
+                *_z = class_parser(chr_eng_1[idx]);
+                break;
+              default:
+                break;
+            }
+            break;
+          }
       }
     }
   }
