@@ -51,6 +51,10 @@ grant connect,select on XXX to cd;
 ```sql
 alter table XXX nologging;
 ```
+## 在sqlplus中执行sql脚本
+```shell
+SQL> @test.sql;
+```
 ## 导入导出
 ```sql
 --导出某些表
