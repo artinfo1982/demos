@@ -61,7 +61,8 @@ void init_image_rect_color();
 double generate_gaussian_noise(double mu, double sigma);
 void add_gauss_noise(IplImage *src);
 void add_warp_affine(IplImage *src, CvScalar &scalar);
-void put_char_into_rect_and_resize(CvScalar &scalar, CvxText *font, int size, IplImage *src, IplImage *dst, const char *chr, int x, int y, int red, int green, int blue);
+void put_char_into_rect_and_resize(CvScalar &scalar, CvxText *font, int size, IplImage *src, IplImage *dst, 
+                                   const char *chr, int x, int y, int red, int green, int blue);
 void insert_plateImg_into_srcImg(int x, int y, int width, int height, IplImage *src, IplImage *plr);
 int write_label_xml(const char *filename, int index);
 void process_single_background_image(const char *inputFile, int block_num, const char *outputFile);
