@@ -35,3 +35,30 @@ const int licence_chr_class[MAX_PLR_FILE_NUM][8] = {
   {12,47,41,39,33,48,59,0}, {12,45,41,35,37,39,63,0}, {20,43,34,61,34,38,45,0}, {20,43,47,34,39,34,62,0}, 
   {20,43,45,36,39,38,38,32}, {13,54,40,33,41,39,37,0}, {15,47,33,33,41,38,33,0}, {12,47,32,57,34,38,41,0}
 };
+
+char *p;
+char *buf;
+int plr_index;
+int class_array[TOTAL_BLOCK_NUM][8];
+int x_array[TOTAL_BLOCK_NUM][10];
+int y_array[TOTAL_BLOCK_NUM][2];
+char *plr_name;
+
+//将车牌图片嵌入背景图片的指定位置处
+void insert_plateImg_into_srcImg(int x, int y, int width, int height, Mat &bg, Mat &plr)
+{
+  plr.copyTo(bg(Rect(x, y, width, height)));
+}
+
+int write_label_xml(const char *filename, int index)
+{
+  int fd = -1, len, size, ret;
+  if ((fd = open(filename, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR)) < 0)
+  {
+    printf("ERROR, can not open voc xml file: %s\n", filename);
+    return 1;
+  }
+  memset(p, 0x0, TOTAL_BLOCK_NUM * 8 * 200 + 300);
+  memset(buf, 0x0, LOOP_BUF_SIZE);
+  char *p1 = p;
+}
