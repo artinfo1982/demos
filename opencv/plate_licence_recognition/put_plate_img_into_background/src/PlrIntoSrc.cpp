@@ -61,4 +61,80 @@ int write_label_xml(const char *filename, int index)
   memset(p, 0x0, TOTAL_BLOCK_NUM * 8 * 200 + 300);
   memset(buf, 0x0, LOOP_BUF_SIZE);
   char *p1 = p;
+  sprintf(buf, "%s%d%s%d%s", XML_A, index, XML_B, index, XML_C);
+  len = strlen(buf);
+  memcpy(p1, buf, len);
+  p1 += len;
+  int i, j, k;
+  for (i = 0; i < TOTAL_BLOCK_NUM; ++i)
+  {
+    //7位车牌
+    k = 0;
+    if (0 == licence_chr_class[plr_index][7])
+    {
+      for (j = 0; j < 7; ++j)
+      {
+        if (2 == k)
+          k++;
+        memset(buf, 0x0, LOOP_BUF_SIZE);
+        sprintf(buf, "%s%d%s%d%s%d%s%d%s%d%s", XML_LOOP_A, class_array[i][j], XML_LOOP_B, 
+               x_array[i][k], XML_LOOP_C, y_array[i][0], XML_LOOP_D, x_array[i][k + 1], XML_LOOP_E, 
+               y_array[i][1], XML_LOOP_F);
+        len = strlen(buf);
+        memcpy(p1, buf, len);
+        p1 += len;
+        k++;
+      }
+    }
+    //8位车牌
+    else
+    {
+      for (j = 0; j < 8; ++j)
+      {
+        if (2 == k)
+          k++;
+        memset(buf, 0x0, LOOP_BUF_SIZE);
+        sprintf(buf, "%s%d%s%d%s%d%s%d%s%d%s", XML_LOOP_A, class_array[i][j], XML_LOOP_B, 
+               x_array[i][k], XML_LOOP_C, y_array[i][0], XML_LOOP_D, x_array[i][k + 1], XML_LOOP_E, 
+               y_array[i][1], XML_LOOP_F);
+        len = strlen(buf);
+        memcpy(p1, buf, len);
+        p1 += len;
+        k++;
+      }
+    }
+  }
+  memset(buf, 0x0, LOOP_BUF_SIZE);
+  sprintf(buf, "%s", XML_D);
+  len = strlen(buf);
+  memcpy(p1, buf, len);
+  p1 += len;
+  size = strlen(p);
+  if ((ret = write(fd, p, size)) < 0)
+  {
+    printf("ERROR, write voc xml file failed, write size is incorrect: %s\n", filename);
+    close(fd);
+    exit(1);
+  }
+  close(fd);
+  return 0;
+}
+
+void process_single_background_image(const char *bgFile, const char *plrPath, int block_num, const char *outputFile)
+{
+  int i, j, k, x, y, z = 0, plr_idx, tmp;
+  struct timeval tv;
+  Mat bg = imread(bgFile, CV_LOAD_IMAGE_COLOR);
+  for (i = 0; i < block_num; ++i)
+  {
+    for (j = 0; j < block_num; ++j)
+    {
+      gettimeofday(&tv, NULL);
+      srand(tv.tv_sec + tv.tv_usec);
+      //在车牌图片库中的索引
+      plr_idx = rand() % 100;
+      plr_index = plr_idx;
+      
+    }
+  }
 }
