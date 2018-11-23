@@ -134,7 +134,56 @@ void process_single_background_image(const char *bgFile, const char *plrPath, in
       //在车牌图片库中的索引
       plr_idx = rand() % 100;
       plr_index = plr_idx;
-      
+      memset(plr_name, 0x0, 128);
+      sprintf(plr_name, "%s%d%s", plrPath, plr_idx, ".jpg");
+      Mat plr = imread(plr_name, CV_LOAD_IMAGE_COLOR);
+      for (k = 0; k < 8; ++k)
+        class_array[z][k] = licence_chr_class[plr_idx][k];
+      gettimeofday(&tv, NULL);
+      srand(tv.tv_sec + tv.tv_usec);
+      x = i * DIV_SIDE_LEN + rand() % COOR_RANGE_X;
+      if ((x + plr.cols) > ((i + 1) * DIV_SIDE_LEN))
+        x = i * DIV_SIDE_LEN;
+      //7位车牌
+      if (0 == licence_chr_class[plr_idx][7])
+      {
+        x_array[z][0] = x;
+        x_array[z][1] = x + (int)(plr.cols * 0.1401869);
+        x_array[z][2] = x + (int)(plr.cols * 0.2616822);
+        x_array[z][3] = x + (int)(plr.cols * 0.3271028);
+        x_array[z][4] = x + (int)(plr.cols * 0.4579439);
+        x_array[z][5] = x + (int)(plr.cols * 0.588785);
+        x_array[z][6] = x + (int)(plr.cols * 0.728972);
+        x_array[z][7] = x + (int)(plr.cols * 0.850467);
+        x_array[z][8] = x + plr.cols;
+        x_array[z][9] = -1;
+      }
+      //8位车牌
+      else
+      {
+        x_array[z][0] = x;
+        x_array[z][1] = x + (int)(plr.cols * 0.1209677);
+        x_array[z][2] = x + (int)(plr.cols * 0.2258);
+        x_array[z][3] = x + (int)(plr.cols * 0.330645);
+        x_array[z][4] = x + (int)(plr.cols * 0.43548);
+        x_array[z][5] = x + (int)(plr.cols * 0.54032);
+        x_array[z][6] = x + (int)(plr.cols * 0.66129);
+        x_array[z][7] = x + (int)(plr.cols * 0.77419);
+        x_array[z][8] = x + (int)(plr.cols * 0.879);
+        x_array[z][9] = x + plr.cols;
+      }
+      gettimeofday(&tv, NULL);
+      srand(tv.tv_sec + tv.tv_usec);
+      y = j * DIV_SIDE_LEN + rand() % COOR_RANGE_Y;
+      if ((y + plr.rows) > ((j + 1) * DIV_SIDE_LEN))
+        y = j * DIV_SIDE_LEN;
+      y_array[z][0] = y;
+      y_array[z][1] = y + plr.rows;
+      insert_plateImg_into_srcImg(x, y, plr.cols, plr.rows, bg, plr);
+      plr.release();
+      z++;
     }
   }
+  imwrite(outputFile, bg);
+  bg.release();
 }
