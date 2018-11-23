@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
         default:
           break;
       }
-      std::cout << phone_number().number() << std::endl;
+      std::cout << phone_number.number() << std::endl;
     }
     std::cout << "----------------------------------" << std::endl << std::endl;
   }
