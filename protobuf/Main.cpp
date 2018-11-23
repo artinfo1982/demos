@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
   //序列化，存入pb文件
   std::fstream out("addressBook.pb", std::ios::out | std::ios::binary | std::ios::trunc);
   address_book.SerializeToOstream(&out);
-  out.cloase();
+  out.close();
   
   //反序列化，从pb文件中解析出信息并打印
   int i, j;
@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
         default:
           break;
       }
-      std::cout << phone_number() << std::endl;
+      std::cout << phone_number().number() << std::endl;
     }
     std::cout << "----------------------------------" << std::endl << std::endl;
   }
