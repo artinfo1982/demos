@@ -1,2 +1,1 @@
-convert_caffemodel_to_prototxt.py   
-python实现的将二进制的caffemodel解析为prototxt文本文件。
+convert_caffemodel_to_prototxt.py --- python实现的将二进制的caffemodel解析为prototxt文本文件。
