@@ -1,0 +1,1 @@
+采用int8，仿照官网的sampleINT8、sampleFasterRCNN，改写适用int8的faster rcnn。
