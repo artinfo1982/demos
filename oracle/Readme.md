@@ -116,9 +116,13 @@ AS
   test_array := array('人','口','手');
   --变量定义
   id VARCHAR2(8);
+  v_t1 timestamp(6);
   ...
 BEGIN
+  --执行sql命令
+  execute immediate 'alter session set nls_date_language=american';
   a := '1';
+  v_t1 := to_timestamp('01-JAN-18 01.00.01.009000000 AM', 'DD-MON-RR HH.MI.SSXFF AM');
   ...
 FOR i IN 1..10
 LOOP
