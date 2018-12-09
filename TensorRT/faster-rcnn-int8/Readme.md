@@ -7,4 +7,4 @@ wget --no-check-certificate https://dl.dropboxusercontent.com/s/o6ii098bu51d139/
 tar zxvf data/faster-rcnn/faster-rcnn.tgz -C data/faster-rcnn --strip-components=1 --exclude=ZF_*
 
 编译：   
-g++ fasterRCNN_int8.cpp common.h common.cpp BatchStream.h data_loader.h -I"/home/cd/TensorRT/include" -I"/usr/local/cuda/include" -I"/usr/local/include" -Wall -std=c++11 -L"../../lib" -L"/usr/local/cuda/targets/x86_64-linux/lib64" -L"/usr/local/lib" -L"../lib" -lnvinfer -lnvparsers -lnvinfer_plugin -lnvonnxparser -lcudnn -lcublas 
+g++ fasterRCNN_int8.cpp common.h common.cpp BatchStream.h data_loader.h -I"/home/cd/TensorRT/include" -I"/usr/local/cuda/include" -I"/usr/local/include" -Wall -std=c++11 -L"../../lib" -L"/usr/local/cuda/targets/x86_64-linux/lib64" -L"/usr/local/lib" -L"../lib" -lnvinfer -lnvparsers -lnvinfer_plugin -lnvonnxparser -lcudnn -lcublas -lcudart_static -lnvToolsExt -lcudart -lrt -ldl -lpthread `pkg-config --libs opencv` -o sample_faster_rcnn_int8
