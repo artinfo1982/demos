@@ -52,3 +52,14 @@ string input_parameter_parser(LayerParameter &lp)
   else
     return "";
 }
+
+string data_parameter_parser(LayerParameter &lp)
+{
+  string s;
+  DataParameter dp = lp.data_param();
+  s.append("  data_param {\n");
+  if (dp.has_source())
+    s.append("    source: \"").append(dp.source()).append("\"\n");
+  if (dp.has_mean_file())
+    s.append("    mean_file: \"").append(dp.mean_file()).append("\"\n");
+}
