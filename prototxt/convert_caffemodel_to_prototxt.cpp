@@ -75,6 +75,7 @@ string data_parameter_parser(LayerParameter &lp)
   if (dp.has_prefetch())
     s.append("    prefetch: ").append(to_string(dp.prefetch())).append("\n");
   s.append("  }\n");
+  return s;
 }
 
 string convolution_parameter_parser(LayerParameter &lp)
@@ -102,8 +103,139 @@ string convolution_parameter_parser(LayerParameter &lp)
     FillerParameter fp = cp.bias_filler();
     s.append(filler_parameter_parser(fp)).append("    }\n")
   }
-    
+  s.append("  }\n");
+  return s;
 }
+
+string lrn_parameter_parser(LayerParameter &lp)
+{
+  string s;
+  LRNParameter rp = lp.lrn_param();
+  s.append("  lrn_param {\n");
+  if (rp.has_local_size())
+    s.append("    local_size: ").append(to_string(rp.local_size())).append("\n");
+  if (rp.has_alpha())
+    s.append("    alpha: ").append(to_string(rp.alpha())).append("\n");
+  if (rp.has_beta())
+    s.append("    beta: ").append(to_string(rp.beta())).append("\n");
+  if (rp.has_k())
+    s.append("    k: ").append(to_string(rp.k())).append("\n");
+  s.append("  }\n");
+  return s;
+}
+
+string pooling_parameter_parser(LayerParameter &lp)
+{
+  string s;
+  PoolingParameter pp = lp.pooling_param();
+  s.append("  pooling_param {\n");
+  if (pp.has_pool())
+    s.append("    pool: ").append(to_string(pp.pool())).append("\n");
+  if (pp.has_kernel_size())
+    s.append("    kernel_size: ").append(to_string(pp.kernel_size())).append("\n");
+  if (pp.has_stride())
+    s.append("    stride: ").append(to_string(pp.stride())).append("\n");
+  if (pp.has_pad())
+    s.append("    pad: ").append(to_string(pp.pad())).append("\n");
+  s.append("  }\n");
+  return s;
+}
+
+string inner_product_parameter_parser(LayerParameter &lp)
+{
+  string s;
+  InnerProductParameter ipp = lp.inner_product_param();
+  s.append("  inner_product_param {\n");
+  if (ipp.has_num_output())
+    s.append("    num_output: ").append(to_string(ipp.num_output())).append("\n");
+  if (ipp.has_weight_filler())
+  {
+    s.append("    weight_filler {\n");
+    FillerParameter fp = ipp.weight_filler();
+    s.append(filler_parameter_parser(fp)).append("    }\n")
+  }
+  if (ipp.has_bias_filler())
+  {
+    s.append("    bias_filler {\n");
+    FillerParameter fp = ipp.bias_filler();
+    s.append(filler_parameter_parser(fp)).append("    }\n")
+  }
+  if (ipp.has_axis())
+    s.append("    axis: ").append(to_string(ipp.axis())).append("\n");
+  s.append("  }\n");
+  return s;
+}
+
+string dropout_parameter_parser(LayerParameter &lp)
+{
+  string s;
+  DropoutParameter dp = lp.dropout_param();
+  s.append("  dropout_param {\n");
+  if (dp.has_dropout_ratio())
+    s.append("    dropout_ratio: ").append(to_string(dp.dropout_ratio())).append("\n");
+  s.append("  }\n");
+  return s;
+}
+
+void write_prototxt_file(const char *fileName, string &s)
+{
+  ofstream out(fileName, ios::out | ios::app);
+  if (out.is_open())
+  {
+    out << s;
+    out.close();
+  }
+  else
+  {
+    printf("ERROR, output prototxt file can not open, fileName: %s\n", fileName);
+    exit(1);
+  }
+}
+
+int main(int argc, char *argv[])
+{
+  if (argc != 3)
+  {
+    printf("Usage: %s caffeModelFileName prototxtFileName\n", argv[0]);
+    exit(1);
+  }
+  char *model = argv[1];
+  char *proto = argv[2];
+  string s;
+  NetParameter net;
+  ReadNetParamsFromBinaryFileOrDie(model, &net);
+  int i, j, k;
+  if (net.has_name())
+    s.append("name: \"").append(net.name()).append("\"\n");
+  for (i = 0; i < net.layer_size(); ++i)
+  {
+    LayerParameter lp = net.layer(i);
+    s.append("layer {\n  name: \"").append(lp.name()).append("\"\n  type: \"").append(lp.type()).append("\"\n");
+    if (lp.bottom_size() > 0)
+    {
+      for (j = 0; j < lp.bottom_size(); ++j)
+        s.append("  bottom: \"").append(lp.bottom(j)).append("\"\n");
+    }
+    if (lp.top_size() > 0)
+    {
+      for (j = 0; j < lp.top_size(); ++j)
+        s.append("  top: \"").append(lp.top(j)).append("\"\n");
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
