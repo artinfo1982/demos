@@ -221,21 +221,35 @@ int main(int argc, char *argv[])
       for (j = 0; j < lp.top_size(); ++j)
         s.append("  top: \"").append(lp.top(j)).append("\"\n");
     }
+    if (lp.param_size() > 0)
+    {
+      for (j = 0; j < lp.param_size(); ++j)
+      {
+        ParamSpec ps = lp.param(j);
+        s.append("  param {\n");
+        if (ps.has_lr_mult())
+          s.append("    lr_mult: ").append(to_string(ps.lr_mult())).append("\n");
+        if (ps.has_decay_mult())
+          s.append("    decay_mult: ").append(to_string(ps.decay_mult())).append("\n");
+        s.append("  }\n");
+      }
+    }
+    if (lp.type() == "Input")
+      s += input_parameter_parser(lp);
+    else if (lp.type() == "Data")
+      s += data_parameter_parser(lp);
+    else if (lp.type() == "Convolution")
+      s += convolution_parameter_parser(lp);
+    else if (lp.type() == "LRN")
+      s += lrn_parameter_parser(lp);
+    else if (lp.type() == "Pooling")
+      s += pooling_parameter_parser(lp);
+    else if (lp.type() == "InnerProduct")
+      s += inner_product_parameter_parser(lp);
+    else if (lp.type() == "Dropout")
+      s += dropout_parameter_parser(lp);
+    s.append("}\n");
   }
+  write_prototxt_file(proto, s);
+  return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
