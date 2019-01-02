@@ -14,4 +14,39 @@ using namespace cv;
 
 int main(int argc, char *argv[])
 {
+  if (argc != 4)
+  {
+    cout << "Usage: " << argv[0] << " img_path batch_path label_file" << endl;
+    cout << "Note: any path should end with /" << endl;
+    exit(1);
+  }
+  int i, j = 0, k, m, n;
+  int shape[4] = {BATCH, 3, PIC_SIZE, PIC_SIZE};
+  float *r = new float[PIX_NUM];
+  float *g = new float[PIX_NUM];
+  float *b = new float[PIX_NUM];
+  float *label = new float[3000];
+  float *p = label;
+  string line;
+  ifstream in_label(argv[3]);
+  k = 0;
+  if (in_label)
+  {
+    while (getline(in_label, line))
+    {
+      label[k] = stof(line, 0);
+      k++;
+    }
+  }
+  string s_img_file_name, s_batch_file_name;
+  const char* img_file_name;
+  const char* batch_file_name;
+  int begin;
+  int idx = 0;
+  Size dsize = Size(PIC_SIZE, PIC_SIZE);
+  string prefix = "batch";
+  for (i = 0; i < B_FILE_NUM; ++i)
+  {
+    
+  }
 }
