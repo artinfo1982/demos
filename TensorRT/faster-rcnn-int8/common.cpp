@@ -1,4 +1,5 @@
 #include "common.h"
+
 std::string locateFile(const std::string& input, const std::vector<std::string> & directories)
 {
     std::string file;
