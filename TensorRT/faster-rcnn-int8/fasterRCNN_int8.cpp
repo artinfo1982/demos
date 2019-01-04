@@ -128,29 +128,21 @@ private:
 
 void readPPMFile(const std::string& filename, PPM& ppm)
 {
-	ppm.fileName = filename;
-	std::ifstream infile(filename, std::ifstream::binary);
-	infile >> ppm.magic >> ppm.w >> ppm.h >> ppm.max;
-	infile.seekg(1, infile.cur);
-	infile.read(reinterpret_cast<char*>(ppm.buffer), ppm.w * ppm.h * 3);
+    ppm.fileName = filename;
+    std::ifstream infile(filename, std::ifstream::binary);
+    infile >> ppm.magic >> ppm.w >> ppm.h >> ppm.max;
+    infile.seekg(1, infile.cur);
+    infile.read(reinterpret_cast<char*>(ppm.buffer), ppm.w * ppm.h * 3);
 }
 
-void caffeToGIEModel(const std::string& deployFile,			// name for caffe prototxt
-	const std::string& modelFile,			// name for model 
-	const std::vector<std::string>& outputs,		// network outputs
-	unsigned int maxBatchSize,				// batch size - NB must be at least as large as the batch we want to run with)
-	nvcaffeparser1::IPluginFactory* pluginFactory,	// factory for plugin layers
-	IHostMemory **gieModelStream, bool enableINT8)			// output stream for the GIE model
+void caffeToTRTModel(const std::string& deployFile, const std::string& modelFile, const std::vector<std::string>& outputs, unsigned int maxBatchSize, nvcaffeparser1::IPluginFactory* pluginFactory, IHostMemory **gieModelStream, bool enableINT8)
 {
-	// create the builder
 	IBuilder* builder = createInferBuilder(gLogger);
-	// parse the caffe model to populate the network, then set the outputs
 	INetworkDefinition* network = builder->createNetwork();
 	ICaffeParser* parser = createCaffeParser();
 	parser->setPluginFactory(pluginFactory);
 
-//    auto datatype = DataType::kFLOAT;
-	std::cout << "Begin parsing model..." << deployFile << "  --  "<< modelFile <<std::endl;
+	std::cout << "Begin parsing model..." <<std::endl;
 	const IBlobNameToTensor* blobNameToTensor = parser->parse(deployFile.c_str(),
 			modelFile.c_str(),
 															  *network,
@@ -193,52 +185,6 @@ void caffeToGIEModel(const std::string& deployFile,			// name for caffe prototxt
 	shutdownProtobufLibrary();
 }
 
-void caffeToGIEModel2(const std::string& deployFile,			// name for caffe prototxt
-					  const std::string& modelFile,			// name for model
-					  const std::vector<std::string>& outputs,		// network outputs
-					  unsigned int maxBatchSize,				// batch size - NB must be at least as large as the batch we want to run with)
-					  nvcaffeparser1::IPluginFactory* pluginFactory,	// factory for plugin layers
-					  IHostMemory **gieModelStream)			// output stream for the GIE model
-{
-	// create the builder
-	IBuilder* builder = createInferBuilder(gLogger);
-	// parse the caffe model to populate the network, then set the outputs
-	INetworkDefinition* network = builder->createNetwork();
-	ICaffeParser* parser = createCaffeParser();
-	parser->setPluginFactory(pluginFactory);
-
-	std::cout << "Begin parsing model..." << deployFile << "  --  "<< modelFile <<std::endl;
-	const IBlobNameToTensor* blobNameToTensor = parser->parse(deployFile.c_str(),
-															  modelFile.c_str(),
-															  *network,
-															  DataType::kFLOAT);
-
-
-	std::cout << "End parsing model..." << std::endl;
-	// specify which tensors are outputs
-	for (auto& s : outputs)
-		network->markOutput(*blobNameToTensor->find(s.c_str()));
-
-	// Build the engine
-	builder->setMaxBatchSize(maxBatchSize);
-	builder->setMaxWorkspaceSize(10 << 20);	// we need about 6MB of scratch space for the plugin layer for batch size 5
-
-	std::cout << "Begin building engine..." << std::endl;
-	ICudaEngine* engine = builder->buildCudaEngine(*network);
-	assert(engine);
-	std::cout << "End building engine..." << std::endl;
-
-	// we don't need the network any more, and we can destroy the parser
-	network->destroy();
-	parser->destroy();
-
-	// serialize the engine, then close everything down
-	(*gieModelStream) = engine->serialize();
-
-	engine->destroy();
-	builder->destroy();
-	shutdownProtobufLibrary();
-}
 void doInference(IExecutionContext& context, float* inputData, float* inputImInfo, float* outputBboxPred, float* outputClsProb, float *outputRois, int batchSize)
 {
 	const ICudaEngine& engine = context.getEngine();
@@ -528,12 +474,10 @@ std::vector<int> nms(std::vector<std::pair<float, int> >& score_index, float* bb
 
 int main(int argc, char** argv)
 {
-	// create a GIE model from the caffe model and serialize it to a stream
 	PluginFactory pluginFactory;
 	IHostMemory *gieModelStream{ nullptr };
-    // batch size
-	const int N = 4;
-	caffeToGIEModel("/home/cd/TensorRT/data/faster_rcnn_test_iplugin.prototxt",
+	const int N = 5;
+	caffeToTRTModel("/home/cd/TensorRT/data/faster_rcnn_test_iplugin.prototxt",
 		"/home/cd/TensorRT/data/VGG16_faster_rcnn_final.caffemodel",
 		std::vector < std::string > { OUTPUT_BLOB_NAME0, OUTPUT_BLOB_NAME1, OUTPUT_BLOB_NAME2 },
 		N, &pluginFactory, &gieModelStream, true);
