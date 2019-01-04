@@ -14,7 +14,6 @@
 #include <algorithm>
 #include <iterator>
 
-
 #include "NvCaffeParser.h"
 #include "NvInferPlugin.h"
 #include "common.h"
@@ -28,7 +27,6 @@ using namespace nvinfer1;
 using namespace nvcaffeparser1;
 using namespace plugin;
 
-// stuff we know about the network and the caffe input/output blobs
 static const int INPUT_C = 3;
 static const int INPUT_H = 375;
 static const int INPUT_W = 500;
@@ -59,93 +57,75 @@ const float anchorsScales[anchorsScaleCount] = { 8.0f, 16.0f, 32.0f };
 
 struct PPM
 {
-	std::string magic, fileName;
-	int h, w, max;
-	uint8_t buffer[INPUT_C*INPUT_H*INPUT_W];
-};
-
-struct BBox
-{
-	float x1, y1, x2, y2;
+    std::string magic, fileName;
+    int h, w, max;
+    uint8_t buffer[INPUT_C*INPUT_H*INPUT_W];
 };
 
 std::string locateFile(const std::string& input)
 {
-    std::vector<std::string> dirs{"./", "./"};
+    std::vector<std::string> dirs{"data/faster-rcnn/", "data/samples/faster-rcnn/"};
     return locateFile(input, dirs);
 };
-
 
 class Int8EntropyCalibrator : public IInt8EntropyCalibrator
 {
 public:
-	Int8EntropyCalibrator(DataLoader* dataloader,
-						  int batch, int height, int width, int channel,
-						  bool readCache = true) : mReadCache(readCache)
-	{
-	    _dataloader = dataloader;
-		DimsNCHW dims = DimsNCHW(batch, channel, height, width);
-		mInputCount1 = batch * dims.c() * dims.h() * dims.w();
-		CHECK(cudaMalloc(&mDeviceInput1, mInputCount1 * sizeof(float)));
-		mInputCount2 = batch * 3; // for image shap
-		CHECK(cudaMalloc(&mDeviceInput2, mInputCount2 * sizeof(float)));
-	}
-
-	virtual ~Int8EntropyCalibrator()
-	{
-		CHECK(cudaFree(mDeviceInput1));
-		CHECK(cudaFree(mDeviceInput2));
-	}
-
-	int getBatchSize() const override { return 2; }
-
-	bool getBatch(void* bindings[], const char* names[], int nbBindings) override
-	{
-		if(!_dataloader->next())
-		    return false;
-
+    Int8EntropyCalibrator(DataLoader* dataloader, int batch, int height, int width, int channel, bool readCache = true) : mReadCache(readCache)
+    {
+	_dataloader = dataloader;
+	DimsNCHW dims = DimsNCHW(batch, channel, height, width);
+	mInputCount1 = batch * dims.c() * dims.h() * dims.w();
+	CHECK(cudaMalloc(&mDeviceInput1, mInputCount1 * sizeof(float)));
+	mInputCount2 = batch * 3;
+	CHECK(cudaMalloc(&mDeviceInput2, mInputCount2 * sizeof(float)));
+    }
+    virtual ~Int8EntropyCalibrator()
+    {
+	CHECK(cudaFree(mDeviceInput1));
+	CHECK(cudaFree(mDeviceInput2));
+    }
+    int getBatchSize() const override { return 2; }
+    bool getBatch(void* bindings[], const char* names[], int nbBindings) override
+    {
+	if(!_dataloader->next())
+	    return false;
         CHECK(cudaMemcpy(mDeviceInput1, _dataloader->getBatch(),  mInputCount1 * sizeof(float), cudaMemcpyHostToDevice));
-		CHECK(cudaMemcpy(mDeviceInput2, _dataloader->getIminfo(), mInputCount2 * sizeof(float), cudaMemcpyHostToDevice));
+	CHECK(cudaMemcpy(mDeviceInput2, _dataloader->getIminfo(), mInputCount2 * sizeof(float), cudaMemcpyHostToDevice));
         bindings[0] = mDeviceInput1;
         bindings[1] = mDeviceInput2;
         return true;
-	}
-
-	const void* readCalibrationCache(size_t& length) override
-	{
-		std::cout << "Reading from cache: "<< calibrationTableName()<<std::endl;
-		mCalibrationCache.clear();
-		std::ifstream input(calibrationTableName(), std::ios::binary);
-		input >> std::noskipws;
-		if (mReadCache && input.good())
-			std::copy(std::istream_iterator<char>(input), std::istream_iterator<char>(), std::back_inserter(mCalibrationCache));
-
-		length = mCalibrationCache.size();
-		return length ? &mCalibrationCache[0] : nullptr;
-	}
-
-	void writeCalibrationCache(const void* cache, size_t length) override
-	{
-		std::ofstream output(calibrationTableName(), std::ios::binary);
-		output.write(reinterpret_cast<const char*>(cache), length);
-	}
-
+    }
+    const void* readCalibrationCache(size_t& length) override
+    {
+	std::cout << "Reading from cache: "<< calibrationTableName()<<std::endl;
+	mCalibrationCache.clear();
+	std::ifstream input(calibrationTableName(), std::ios::binary);
+	input >> std::noskipws;
+	if (mReadCache && input.good())
+	    std::copy(std::istream_iterator<char>(input), std::istream_iterator<char>(), std::back_inserter(mCalibrationCache));
+	length = mCalibrationCache.size();
+	return length ? &mCalibrationCache[0] : nullptr;
+    }
+    void writeCalibrationCache(const void* cache, size_t length) override
+    {
+	std::ofstream output(calibrationTableName(), std::ios::binary);
+	output.write(reinterpret_cast<const char*>(cache), length);
+    }
 private:
     static std::string calibrationTableName()
     {
         return std::string("CalibrationTable") + "vgg16";
     }
-	bool mReadCache{ true };
-	size_t mInputCount1;
-	size_t mInputCount2;
-	void* mDeviceInput1{ nullptr };
-	void* mDeviceInput2{ nullptr };
-	std::vector<char> mCalibrationCache;
-	DataLoader* _dataloader;
+    bool mReadCache{ true };
+    size_t mInputCount1;
+    size_t mInputCount2;
+    void* mDeviceInput1{ nullptr };
+    void* mDeviceInput2{ nullptr };
+    std::vector<char> mCalibrationCache;
+    DataLoader* _dataloader;
 };
 
-
-// simple PPM (portable pixel map) reader
 void readPPMFile(const std::string& filename, PPM& ppm)
 {
 	ppm.fileName = filename;
@@ -153,37 +133,6 @@ void readPPMFile(const std::string& filename, PPM& ppm)
 	infile >> ppm.magic >> ppm.w >> ppm.h >> ppm.max;
 	infile.seekg(1, infile.cur);
 	infile.read(reinterpret_cast<char*>(ppm.buffer), ppm.w * ppm.h * 3);
-}
-
-void writePPMFileWithBBox(const std::string& filename, PPM& ppm, const BBox& bbox)
-{
-	std::ofstream outfile(filename, std::ofstream::binary);
-	assert(!outfile.fail());
-	outfile << "P6" << "\n" << ppm.w << " " << ppm.h << "\n" << ppm.max << "\n";
-	auto round = [](float x)->int {return int(std::floor(x + 0.5f)); };
-	for (int x = int(bbox.x1); x < int(bbox.x2); ++x)
-	{
-		// bbox top border
-		ppm.buffer[(round(bbox.y1) * ppm.w + x) * 3] = 255;
-		ppm.buffer[(round(bbox.y1) * ppm.w + x) * 3 + 1] = 0;
-		ppm.buffer[(round(bbox.y1) * ppm.w + x) * 3 + 2] = 0;
-		// bbox bottom border
-		ppm.buffer[(round(bbox.y2) * ppm.w + x) * 3] = 255;
-		ppm.buffer[(round(bbox.y2) * ppm.w + x) * 3 + 1] = 0;
-		ppm.buffer[(round(bbox.y2) * ppm.w + x) * 3 + 2] = 0;
-	}
-	for (int y = int(bbox.y1); y < int(bbox.y2); ++y)
-	{
-		// bbox left border
-		ppm.buffer[(y * ppm.w + round(bbox.x1)) * 3] = 255;
-		ppm.buffer[(y * ppm.w + round(bbox.x1)) * 3 + 1] = 0;
-		ppm.buffer[(y * ppm.w + round(bbox.x1)) * 3 + 2] = 0;
-		// bbox right border
-		ppm.buffer[(y * ppm.w + round(bbox.x2)) * 3] = 255;
-		ppm.buffer[(y * ppm.w + round(bbox.x2)) * 3 + 1] = 0;
-		ppm.buffer[(y * ppm.w + round(bbox.x2)) * 3 + 2] = 0;
-	}
-	outfile.write(reinterpret_cast<char*>(ppm.buffer), ppm.w * ppm.h * 3);
 }
 
 void caffeToGIEModel(const std::string& deployFile,			// name for caffe prototxt
@@ -687,12 +636,7 @@ int main(int argc, char** argv)
 			for (unsigned k = 0; k < indices.size(); ++k)
 			{
 				int idx = indices[k];
-				std::string storeName = CLASSES[c] + "-" + std::to_string(scores[idx*OUTPUT_CLS_SIZE + c]) + ".ppm";
-				std::cout << "Detected " << CLASSES[c] << " in " << ppms[i].fileName << " with confidence " << scores[idx*OUTPUT_CLS_SIZE + c] * 100.0f << "% "
-					<< " (Result stored in " << storeName << ")." << std::endl;
-
-				BBox b{ bbox[idx*OUTPUT_BBOX_SIZE + c * 4], bbox[idx*OUTPUT_BBOX_SIZE + c * 4 + 1], bbox[idx*OUTPUT_BBOX_SIZE + c * 4 + 2], bbox[idx*OUTPUT_BBOX_SIZE + c * 4 + 3] };
-				writePPMFileWithBBox(storeName, ppms[i], b);
+				std::cout << "Detected " << CLASSES[c] << " in " << ppms[i].fileName << " with confidence " << scores[idx*OUTPUT_CLS_SIZE + c] * 100.0f << "% " << std::endl;
 			}
 		}
 	}
