@@ -1,4 +1,4 @@
-采用int8，仿照官网的sampleINT8、sampleFasterRCNN，改写适用int8的faster rcnn。   
+针对caffemodel和prototxt的faster rcnn的int8实现。   
 
 faster rcnn权值文件caffemodel下载：
 ```shell
