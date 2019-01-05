@@ -135,109 +135,79 @@ void readPPMFile(const std::string& filename, PPM& ppm)
     infile.read(reinterpret_cast<char*>(ppm.buffer), ppm.w * ppm.h * 3);
 }
 
-void caffeToTRTModel(const std::string& deployFile, const std::string& modelFile, const std::vector<std::string>& outputs, unsigned int maxBatchSize, nvcaffeparser1::IPluginFactory* pluginFactory, IHostMemory **gieModelStream, bool enableINT8)
+void caffeToTRTModel(const std::string& deployFile, const std::string& modelFile, const std::vector<std::string>& outputs, unsigned int maxBatchSize, nvcaffeparser1::IPluginFactory* pluginFactory, IHostMemory **modelStream, DataType dataType)
 {
-	IBuilder* builder = createInferBuilder(gLogger);
-	INetworkDefinition* network = builder->createNetwork();
-	ICaffeParser* parser = createCaffeParser();
-	parser->setPluginFactory(pluginFactory);
-
-	std::cout << "Begin parsing model..." <<std::endl;
-	const IBlobNameToTensor* blobNameToTensor = parser->parse(deployFile.c_str(),
-			modelFile.c_str(),
-															  *network,
-															  DataType::kFLOAT); //DataType::kFLOAT); //
-
-
-	std::cout << "End parsing model..." << std::endl;
-	// specify which tensors are outputs
-	for (auto& s : outputs)
-		network->markOutput(*blobNameToTensor->find(s.c_str()));
-
-	// Build the engine
-	builder->setMaxBatchSize(maxBatchSize);
-	builder->setMaxWorkspaceSize(1 << 30);	// we need about 6MB of scratch space for the plugin layer for batch size 5
-
-	if(enableINT8) {
-		builder->setAverageFindIterations(1);
-		builder->setMinFindIterations(1);
-		builder->setDebugSync(true);
-		builder->setInt8Mode(true);
-		DataLoader* dataLoader = new DataLoader(maxBatchSize, "/home/qinshuo/Work/sampleFasterRCNN/faster-rcnn/list.txt", 500, 375, 3);
-		Int8EntropyCalibrator* calibrator = new Int8EntropyCalibrator(dataLoader, maxBatchSize, 375, 500, 3);
-		builder->setInt8Calibrator(calibrator);
-	}
-
-	std::cout << "Begin building engine..." << std::endl;
-	ICudaEngine* engine = builder->buildCudaEngine(*network);
-	assert(engine);
-	std::cout << "End building engine..." << std::endl;
-
-	// we don't need the network any more, and we can destroy the parser
-	network->destroy();
-	parser->destroy();
-
-	// serialize the engine, then close everything down
-	(*gieModelStream) = engine->serialize();
-
-	engine->destroy();
-	builder->destroy();
-	shutdownProtobufLibrary();
+    IBuilder* builder = createInferBuilder(gLogger);
+    INetworkDefinition* network = builder->createNetwork();
+    ICaffeParser* parser = createCaffeParser();
+    parser->setPluginFactory(pluginFactory);
+    std::cout << "Begin to parse model" <<std::endl;
+    const IBlobNameToTensor* blobNameToTensor = parser->parse(deployFile.c_str(), modelFile.c_str(), *network, dataType == DataType::kINT8 ? DataType::kFLOAT : dataType);
+    std::cout << "End to parse model" << std::endl;
+    for (auto& s : outputs)
+	network->markOutput(*blobNameToTensor->find(s.c_str()));
+    builder->setMaxBatchSize(maxBatchSize);
+    builder->setMaxWorkspaceSize(1 << 30);
+    builder->setInt8Mode(true);
+    DataLoader* dataLoader = new DataLoader(maxBatchSize, "/home/cd/TensorRT-4.0.1.6/data/faster-rcnn/list.txt", 500, 375, 3);
+    Int8EntropyCalibrator* calibrator = new Int8EntropyCalibrator(dataLoader, maxBatchSize, 375, 500, 3);
+    builder->setInt8Calibrator(calibrator);
+    std::cout << "Begin to build engine..." << std::endl;
+    ICudaEngine* engine = builder->buildCudaEngine(*network);
+    assert(engine);
+    std::cout << "End to build engine..." << std::endl;
+    network->destroy();
+    parser->destroy();
+    (*modelStream) = engine->serialize();
+    engine->destroy();
+    builder->destroy();
+    shutdownProtobufLibrary();
 }
 
-void doInference(IExecutionContext& context, float* inputData, float* inputImInfo, float* outputBboxPred, float* outputClsProb, float *outputRois, int batchSize)
+float doInference(IExecutionContext& context, float* inputData, float* inputImInfo, float* outputBboxPred, float* outputClsProb, float *outputRois, int batchSize)
 {
-	const ICudaEngine& engine = context.getEngine();
-	// input and output buffer pointers that we pass to the engine - the engine requires exactly IEngine::getNbBindings(),
-	// of these, but in this case we know that there is exactly 2 inputs and 3 outputs.
-	assert(engine.getNbBindings() == 5);
-	void* buffers[5];
-
-	// In order to bind the buffers, we need to know the names of the input and output tensors.
-	// note that indices are guaranteed to be less than IEngine::getNbBindings()
-	int inputIndex0 = engine.getBindingIndex(INPUT_BLOB_NAME0),
-		inputIndex1 = engine.getBindingIndex(INPUT_BLOB_NAME1),
-		outputIndex0 = engine.getBindingIndex(OUTPUT_BLOB_NAME0),
-		outputIndex1 = engine.getBindingIndex(OUTPUT_BLOB_NAME1),
-		outputIndex2 = engine.getBindingIndex(OUTPUT_BLOB_NAME2);
-
-
-	// create GPU buffers and a stream
-	CHECK(cudaMalloc(&buffers[inputIndex0], batchSize * INPUT_C * INPUT_H * INPUT_W * sizeof(float)));   // data
-	CHECK(cudaMalloc(&buffers[inputIndex1], batchSize * IM_INFO_SIZE * sizeof(float)));                  // im_info
-	CHECK(cudaMalloc(&buffers[outputIndex0], batchSize * nmsMaxOut * OUTPUT_BBOX_SIZE * sizeof(float))); // bbox_pred
-	CHECK(cudaMalloc(&buffers[outputIndex1], batchSize * nmsMaxOut * OUTPUT_CLS_SIZE * sizeof(float)));  // cls_prob
-	CHECK(cudaMalloc(&buffers[outputIndex2], batchSize * nmsMaxOut * 4 * sizeof(float)));                // rois
-
-	cudaStream_t stream;
-	CHECK(cudaStreamCreate(&stream));
-
-	// DMA the input to the GPU,  execute the batch asynchronously, and DMA it back:
-	CHECK(cudaMemcpyAsync(buffers[inputIndex0], inputData, batchSize * INPUT_C * INPUT_H * INPUT_W * sizeof(float), cudaMemcpyHostToDevice, stream));
-	CHECK(cudaMemcpyAsync(buffers[inputIndex1], inputImInfo, batchSize * IM_INFO_SIZE * sizeof(float), cudaMemcpyHostToDevice, stream));
-	cudaStreamSynchronize(stream);
-
+    std::cout << "Begin to do infer..." << std::endl;
+    const ICudaEngine& engine = context.getEngine();
+    assert(engine.getNbBindings() == 5);
+    void* buffers[5];
+    float ms = 0.0f;
+    int inputIndex0 = engine.getBindingIndex(INPUT_BLOB_NAME0),
+	inputIndex1 = engine.getBindingIndex(INPUT_BLOB_NAME1),
+	outputIndex0 = engine.getBindingIndex(OUTPUT_BLOB_NAME0),
+	outputIndex1 = engine.getBindingIndex(OUTPUT_BLOB_NAME1),
+	outputIndex2 = engine.getBindingIndex(OUTPUT_BLOB_NAME2);
+    CHECK(cudaMalloc(&buffers[inputIndex0], batchSize * INPUT_C * INPUT_H * INPUT_W * sizeof(float)));   // data
+    CHECK(cudaMalloc(&buffers[inputIndex1], batchSize * IM_INFO_SIZE * sizeof(float)));                  // im_info
+    CHECK(cudaMalloc(&buffers[outputIndex0], batchSize * nmsMaxOut * OUTPUT_BBOX_SIZE * sizeof(float))); // bbox_pred
+    CHECK(cudaMalloc(&buffers[outputIndex1], batchSize * nmsMaxOut * OUTPUT_CLS_SIZE * sizeof(float)));  // cls_prob
+    CHECK(cudaMalloc(&buffers[outputIndex2], batchSize * nmsMaxOut * 4 * sizeof(float)));                // rois
+    cudaStream_t stream;
+    CHECK(cudaStreamCreate(&stream));
+    // DMA the input to the GPU,  execute the batch asynchronously, and DMA it back:
+    CHECK(cudaMemcpyAsync(buffers[inputIndex0], inputData, batchSize * INPUT_C * INPUT_H * INPUT_W * sizeof(float), cudaMemcpyHostToDevice, stream));
+    CHECK(cudaMemcpyAsync(buffers[inputIndex1], inputImInfo, batchSize * IM_INFO_SIZE * sizeof(float), cudaMemcpyHostToDevice, stream));
+    cudaStreamSynchronize(stream);
     double start = std::clock();
     int iter = 1;
-	for(int i =0;i<iter; i++){
+    for(int i=0; i<iter; ++i)
+    {
         context.enqueue(batchSize, buffers, stream, nullptr);
         cudaStreamSynchronize(stream);
-	}
-	std::cout<< "average time elapse:  "<< (std::clock()-start) / (double) CLOCKS_PER_SEC /iter * 1000 << " ms" <<std::endl;
-
-	CHECK(cudaMemcpyAsync(outputBboxPred, buffers[outputIndex0], batchSize * nmsMaxOut * OUTPUT_BBOX_SIZE * sizeof(float), cudaMemcpyDeviceToHost, stream));
-	CHECK(cudaMemcpyAsync(outputClsProb, buffers[outputIndex1], batchSize * nmsMaxOut * OUTPUT_CLS_SIZE * sizeof(float), cudaMemcpyDeviceToHost, stream));
-	CHECK(cudaMemcpyAsync(outputRois, buffers[outputIndex2], batchSize * nmsMaxOut * 4 * sizeof(float), cudaMemcpyDeviceToHost, stream));
-	cudaStreamSynchronize(stream);
-
-
-	// release the stream and the buffers
-	cudaStreamDestroy(stream);
-	CHECK(cudaFree(buffers[inputIndex0]));
-	CHECK(cudaFree(buffers[inputIndex1]));
-	CHECK(cudaFree(buffers[outputIndex0]));
-	CHECK(cudaFree(buffers[outputIndex1]));
-	CHECK(cudaFree(buffers[outputIndex2]));
+    }
+    ms = (std::clock()-start) / (double) CLOCKS_PER_SEC /iter * 1000;
+    std::cout<< "infer total time elapse:  "<< ms << " ms" <<std::endl;
+    CHECK(cudaMemcpyAsync(outputBboxPred, buffers[outputIndex0], batchSize * nmsMaxOut * OUTPUT_BBOX_SIZE * sizeof(float), cudaMemcpyDeviceToHost, stream));
+    CHECK(cudaMemcpyAsync(outputClsProb, buffers[outputIndex1], batchSize * nmsMaxOut * OUTPUT_CLS_SIZE * sizeof(float), cudaMemcpyDeviceToHost, stream));
+    CHECK(cudaMemcpyAsync(outputRois, buffers[outputIndex2], batchSize * nmsMaxOut * 4 * sizeof(float), cudaMemcpyDeviceToHost, stream));
+    cudaStreamSynchronize(stream);
+    CHECK(cudaFree(buffers[inputIndex0]));
+    CHECK(cudaFree(buffers[inputIndex1]));
+    CHECK(cudaFree(buffers[outputIndex0]));
+    CHECK(cudaFree(buffers[outputIndex1]));
+    CHECK(cudaFree(buffers[outputIndex2]));
+    cudaStreamDestroy(stream);
+    std::cout << "End to do infer..." << std::endl;
+    return ms;
 }
 
 template<int OutC>
@@ -475,12 +445,12 @@ std::vector<int> nms(std::vector<std::pair<float, int> >& score_index, float* bb
 int main(int argc, char** argv)
 {
 	PluginFactory pluginFactory;
-	IHostMemory *gieModelStream{ nullptr };
+	IHostMemory *modelStream{ nullptr };
 	const int N = 5;
 	caffeToTRTModel("/home/cd/TensorRT/data/faster_rcnn_test_iplugin.prototxt",
 		"/home/cd/TensorRT/data/VGG16_faster_rcnn_final.caffemodel",
 		std::vector < std::string > { OUTPUT_BLOB_NAME0, OUTPUT_BLOB_NAME1, OUTPUT_BLOB_NAME2 },
-		N, &pluginFactory, &gieModelStream, true);
+		N, &pluginFactory, &modelStream, true);
 
 	pluginFactory.destroyPlugin();
 	// read a random sample image
@@ -519,7 +489,7 @@ int main(int argc, char** argv)
 
 	// deserialize the engine 
 	IRuntime* runtime = createInferRuntime(gLogger);
-	ICudaEngine* engine = runtime->deserializeCudaEngine(gieModelStream->data(), gieModelStream->size(), &pluginFactory);
+	ICudaEngine* engine = runtime->deserializeCudaEngine(modelStream->data(), modelStream->size(), &pluginFactory);
 
 	IExecutionContext *context = engine->createExecutionContext();
 
