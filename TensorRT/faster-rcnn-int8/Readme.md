@@ -1,4 +1,4 @@
-针对caffemodel和prototxt的faster rcnn的int8实现。   
+针对caffemodel和prototxt的faster rcnn的fp32、int8实现。   
 
 faster rcnn权值文件caffemodel下载：
 ```shell
@@ -12,11 +12,30 @@ tar zxvf data/faster-rcnn/faster-rcnn.tgz -C data/faster-rcnn --strip-components
 
 编译：
 ```shell
-g++ fasterRCNN_int8.cpp common.h common.cpp data_loader.h -I"/home/cd/TensorRT/include" -I"/usr/local/cuda/include" -I"/usr/local/include" -Wall -std=c++11 -L"../../lib" -L"/usr/local/cuda/lib64" -L"/usr/local/lib" -L"../lib" -lnvinfer -lnvparsers -lnvinfer_plugin -lnvonnxparser -lcudnn -lcublas -lcudart_static -lnvToolsExt -lcudart -lrt -ldl -lpthread `pkg-config --libs opencv` -o sample_faster_rcnn_int8
+g++ fasterRCNN_fp32.cpp common.h common.cpp -I"/home/cd/TensorRT-4.0.1.6/include" -I"/usr/local/cuda/include" -I"/usr/local/include" -Wall -std=c++11 -L"../../lib" -L"/usr/local/cuda/lib64" -L"/usr/local/lib" -L"../lib" -lnvinfer -lnvparsers -lnvinfer_plugin -lcublas -lcudart -lrt -ldl -lpthread `pkg-config --libs opencv` -o faster_rcnn_fp32 -O3
+g++ fasterRCNN_int8.cpp common.h common.cpp data_loader.h -I"/home/cd/TensorRT-4.0.1.6/include" -I"/usr/local/cuda/include" -I"/usr/local/include" -Wall -std=c++11 -L"../../lib" -L"/usr/local/cuda/lib64" -L"/usr/local/lib" -L"../lib" -lnvinfer -lnvparsers -lnvinfer_plugin -lcublas -lcudart -lrt -ldl -lpthread `pkg-config --libs opencv` -o faster_rcnn_int8 -O3
+```
+
+运行：
+```shell
+./faster_rcnn_fp32
+./faster_rcnn_int8
+```
+
+结果：
+```text
+在NVIDIA Tesla P4 GPU上的测试结果：
+
+fp32:
+avg infer time of each image=138.291ms, top1 error rate=24%,top5 error rate=15.0667%, total number=3000, total top1_success=2280, total top5_success=2548
+
+int8:
+avg infer time of each image=55.7156ms, top1 error rate=24.2%,top5 error rate=15.5667%, total number=3000, total top1_success=2274, total top5_success=2533
 ```
 
 注意点：
 ```text
 1. fasterRCNN_int8.cpp中用到的/home/cd/TensorRT-4.0.1.6/data/faster-rcnn/list.txt的内容为PASCAL VOC图片集每一张图片的绝对路径，一行对应一个文件。
-2. 上述代码，仅在TensorRT-4.x + cuda 9.2 + cudnn 7.1下测试通过。
+2. 上述代码，仅在TensorRT-4.0.1.6 + cuda 9.2 + cudnn 7.1下测试通过。
+3. 在NVIDIA Tesla P4 GPU上的测试数据。
 ```
