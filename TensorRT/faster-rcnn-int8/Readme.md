@@ -31,6 +31,10 @@ avg infer time of each image=138.291ms, top1 error rate=24%,top5 error rate=15.0
 
 int8:
 avg infer time of each image=55.7156ms, top1 error rate=24.2%,top5 error rate=15.5667%, total number=3000, total top1_success=2274, total top5_success=2533
+
+压缩前的fp32权值文件大小（byte）：548317115
+压缩后的int8权值文件大小（byte）：138687816
+压缩后的文件只有原始文件的1/4
 ```
 
 注意点：
