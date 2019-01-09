@@ -456,89 +456,40 @@ int main(int argc, char* argv[])
 {
     PluginFactory pluginFactory;
     IHostMemory *modelStream{ nullptr };
-    const int N = 5;
-    caffeToTRTModel("/home/cd/TensorRT-4.0.1.6/data/faster-rcnn/faster_rcnn_test_iplugin.prototxt", 
-		    "/home/cd/TensorRT-4.0.1.6/data/faster-rcnn/VGG16_faster_rcnn_final.caffemodel",
-		    std::vector < std::string > { OUTPUT_BLOB_NAME0, OUTPUT_BLOB_NAME1, OUTPUT_BLOB_NAME2 },
-		    N, &pluginFactory, &modelStream, DataType::kINT8);
+    const int N = 10;
+    const int total_number = 3000;
+    caffeToTRTModel("/home/cd/TensorRT-4.0.1.6/data/faster-rcnn/faster_rcnn_test_iplugin.prototxt", "/home/cd/TensorRT-4.0.1.6/data/faster-rcnn/VGG16_faster_rcnn_final.caffemodel", std::vector < std::string > { OUTPUT_BLOB_NAME0, OUTPUT_BLOB_NAME1, OUTPUT_BLOB_NAME2 }, N, &pluginFactory, &modelStream, DataType::kINT8);
     pluginFactory.destroyPlugin();
-    std::vector<std::string> imageList = { "/home/cd/TensorRT-4.0.1.6/data/faster-rcnn/1.ppm",
-					  "/home/cd/TensorRT-4.0.1.6/data/faster-rcnn/2.ppm",
-					  "/home/cd/TensorRT-4.0.1.6/data/faster-rcnn/3.ppm",
-					  "/home/cd/TensorRT-4.0.1.6/data/faster-rcnn/4.ppm",
-					  "/home/cd/TensorRT-4.0.1.6/data/faster-rcnn/5.ppm" };
-    std::vector<PPM> ppms(N);
-    float imInfo[N * 3];
-    assert(ppms.size() <= imageList.size());
-    for (int i = 0; i < N; ++i)
-    {
-	readPPMFile(imageList[i], ppms[i]);
-	imInfo[i * 3] = float(ppms[i].h);   // number of rows
-	imInfo[i * 3 + 1] = float(ppms[i].w); // number of columns
-	imInfo[i * 3 + 2] = 1;         // image scale
-    }
-    float* data = new float[N*INPUT_C*INPUT_H*INPUT_W];
-    // pixel mean used by the Faster R-CNN's author
-    float pixelMean[3]{ 102.9801f, 115.9465f, 122.7717f }; // also in BGR order
-    for (int i = 0, volImg = INPUT_C*INPUT_H*INPUT_W; i < N; ++i)
-    {
-	for (int c = 0; c < INPUT_C; ++c)
-	{
-	    // the color image to input should be in BGR order
-	    for (unsigned j = 0, volChl = INPUT_H*INPUT_W; j < volChl; ++j)
-		data[i*volImg + c*volChl + j] = float(ppms[i].buffer[j*INPUT_C + 2 - c]) - pixelMean[c];
-	}
-    }
+    std::vector<std::string> classList;
+    std::ifstream class_infile("/home/cd/TensorRT-4.0.1.6/data/faster-rcnn/classes.txt");
+    std::string tmp;
+    while (class_infile >> tmp)
+	classList.push_back(tmp);
+    RES res = {0};
+    float totalTime = 0.0f;
+    int batch_total_number = 0;
+    int top1_success = 0, top5_success = 0;
+    float top1_error_rate = 0.0f, top5_error_rate = 0.0f;
     IRuntime* runtime = createInferRuntime(gLogger);
     ICudaEngine* engine = runtime->deserializeCudaEngine(modelStream->data(), modelStream->size(), &pluginFactory);
     IExecutionContext *context = engine->createExecutionContext();
+    //save int8 tensorRT model
+    std::ofstream outfile("/home/cd/TensorRT-4.0.1.6/data/faster-rcnn/faster-rcnn-int8.trt", std::ios::out | std::ios::binary);
+    if (!outfile.is_open())
+    {
+	std::cout << "fail to open trt model file" << std::endl;
+	exit(1);
+    }
+    unsigned char* p = (unsigned char*)modelStream->data();
+    outfile.write((char*)p, modelStream->size());
+    outfile.close();
+    float* data = new float[N  *INPUT_C * INPUT_H * INPUT_W];
+    float* imInfo = new float[N * 3];
+    PPM* ppms = new PPM[N];
     float* rois = new float[N * nmsMaxOut * 4];
     float* bboxPreds = new float[N * nmsMaxOut * OUTPUT_BBOX_SIZE];
     float* clsProbs = new float[N * nmsMaxOut * OUTPUT_CLS_SIZE];
     float* predBBoxes = new float[N * nmsMaxOut * OUTPUT_BBOX_SIZE];
-    float totalTime = 0.0f;
-    totalTime = doInference(*context, data, imInfo, bboxPreds, clsProbs, rois, N);
-    std::cout << "average infer time of each image is: " << totalTime / N << " ms" << std::endl;
-    context->destroy();
-    engine->destroy();
-    runtime->destroy();
-    pluginFactory.destroyPlugin();
-    for (int i = 0; i < N; ++i)
-    {
-	float * rois_offset = rois + i * nmsMaxOut * 4;
-	for (int j = 0; j < nmsMaxOut * 4 && imInfo[i * 3 + 2] != 1; ++j)
-	    rois_offset[j] /= imInfo[i * 3 + 2];
-    }
-    bboxTransformInvAndClip(rois, bboxPreds, predBBoxes, imInfo, N, nmsMaxOut, OUTPUT_CLS_SIZE);
-    const float nms_threshold = 0.3f;
-    const float score_threshold = 0.8f;
-    for (int i = 0; i < N; ++i)
-    {
-	float *bbox = predBBoxes + i * nmsMaxOut * OUTPUT_BBOX_SIZE;
-	float *scores = clsProbs + i * nmsMaxOut * OUTPUT_CLS_SIZE;
-	for (int c = 1; c < OUTPUT_CLS_SIZE; ++c) // skip the background
-	{
-	    std::vector<std::pair<float, int> > score_index;
-	    for (int r = 0; r < nmsMaxOut; ++r)
-	    {
-		if (scores[r*OUTPUT_CLS_SIZE + c] > score_threshold)
-		{
-		    score_index.push_back(std::make_pair(scores[r*OUTPUT_CLS_SIZE + c], r));
-		    std::stable_sort(score_index.begin(), score_index.end(), [](const std::pair<float, int>& pair1, const std::pair<float, int>& pair2) {return pair1.first > pair2.first;});
-		}
-	    }
-	    std::vector<int> indices = nms(score_index, bbox, c, OUTPUT_CLS_SIZE, nms_threshold);
-	    for (unsigned k = 0; k < indices.size(); ++k)
-	    {
-		int idx = indices[k];
-		std::cout << "Detected " << CLASSES[c] << " in " << ppms[i].fileName << " with confidence " << scores[idx*OUTPUT_CLS_SIZE + c] * 100.0f << "% " << std::endl;
-	    }
-	}
-    }
-    delete[] data;
-    delete[] rois;
-    delete[] bboxPreds;
-    delete[] clsProbs;
-    delete[] predBBoxes;
+
     return 0;
 }
