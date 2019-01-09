@@ -374,48 +374,84 @@ void bboxTransformInvAndClip(float* rois, float* deltas, float* predBBoxes, floa
     }
 }
 
-std::vector<int> nms(std::vector<std::pair<float, int> >& score_index, float* bbox, const int classNum, const int numClasses, const float nms_threshold)
+bool cmp(const std::pair<std::string, float> a, const std::pair<std::string, float> b)
 {
-    auto overlap1D = [](float x1min, float x1max, float x2min, float x2max) -> float 
-    {
-	if (x1min > x2min)
-	{
-	    std::swap(x1min, x2min);
-	    std::swap(x1max, x2max);
-	}
-	return x1max < x2min ? 0 : std::min(x1max, x2max) - x2min;
-    };
-    auto computeIoU = [&overlap1D](float* bbox1, float* bbox2) -> float 
-    {
-	float overlapX = overlap1D(bbox1[0], bbox1[2], bbox2[0], bbox2[2]);
-	float overlapY = overlap1D(bbox1[1], bbox1[3], bbox2[1], bbox2[3]);
-	float area1 = (bbox1[2] - bbox1[0]) * (bbox1[3] - bbox1[1]);
-	float area2 = (bbox2[2] - bbox2[0]) * (bbox2[3] - bbox2[1]);
-	float overlap2D = overlapX * overlapY;
-	float u = area1 + area2 - overlap2D;
-	return u == 0 ? 0 : overlap2D / u;
-    };
-    std::vector<int> indices;
-    for (auto i : score_index)
-    {
-	const int idx = i.second;
-	bool keep = true;
-	for (unsigned k = 0; k < indices.size(); ++k)
-	{
-	    if (keep)
-	    {
-		const int kept_idx = indices[k];
-		float overlap = computeIoU(&bbox[(idx*numClasses + classNum) * 4], &bbox[(kept_idx*numClasses + classNum) * 4]);
-		keep = overlap <= nms_threshold;
-	    }
-	    else
-		break;
-	}
-	if (keep) indices.push_back(idx);
-    }
-    return indices;
+    return a.second > b.second;
 }
 
+RES do_each_batch(unsigned int N, int beginIdx, IExecutionContext *context, const std::vector<std::string> classList, 
+		 float *data, float *imInfo, PPM *ppms, float *rois, float *bboxPreds, float *clsProbs, float *preBBoxes)
+{
+    memset(data, 0x0, N * INPUT_C * INPUT_H * INPUT_W * sizeof(float));
+    memset(imInfo, 0x0, N * 3 * sizeof(float));
+    memset(ppms, 0x0, N * sizeof(PPM));
+    memset(rois, 0x0, N * nmsMaxOut * 4 * sizeof(float));
+    memset(bboxPreds, 0x0, N * nmsMaxOut * OUTPUT_BBOX_SIZE * sizeof(float));
+    memset(clsProbs, 0x0, N * nmsMaxOut * OUTPUT_CLS_SIZE * sizeof(float));
+    memset(preBBoxes, 0x0, N * nmsMaxOut * OUTPUT_BBOX_SIZE * sizeof(float));
+    PluginFactory pluginFactory;
+    RES res = {0};
+    std::vector<std::string> imageList;
+    std::vector<std::string> clazList;
+    for (unsigned int i = beginIdx; i < beginIdx + N; ++i)
+    {
+	imageList.push_back("/home/cd/TensorRT-4.0.1.6/data/faster-rcnn/ppms/" + std::to_string(i) + ".ppm");
+	clazList.push_back(classList[i]);
+    }
+    assert(imageList.size() == N);
+    assert(clazList.size() == N);
+    for (unsigned int i = 0; i < N; ++i)
+    {
+	readPPMFile(imageList[i], ppms[i]);
+	imInfo[i * 3] = float(ppms[i].h);   // number of rows
+	imInfo[i * 3 + 1] = float(ppms[i].w); // number of columns
+	imInfo[i * 3 + 2] = 1;         // image scale
+    }
+    // pixel mean used by the Faster R-CNN's author
+    float pixelMean[3]{ 102.9801f, 115.9465f, 122.7717f }; // also in BGR order
+    for (int i = 0, volImg = INPUT_C*INPUT_H*INPUT_W; i < N; ++i)
+    {
+	for (int c = 0; c < INPUT_C; ++c)
+	{
+	    // the color image to input should be in BGR order
+	    for (unsigned j = 0, volChl = INPUT_H*INPUT_W; j < volChl; ++j)
+		data[i*volImg + c*volChl + j] = float(ppms[i].buffer[j*INPUT_C + 2 - c]) - pixelMean[c];
+	}
+    }
+    res.totalTime = doInference(*context, data, imInfo, bboxPreds, clsProbs, rois, N);
+    for (unsigned int i = 0; i < N; ++i)
+    {
+	float * rois_offset = rois + i * nmsMaxOut * 4;
+	for (int j = 0; j < nmsMaxOut * 4 && imInfo[i * 3 + 2] != 1; ++j)
+	    rois_offset[j] /= imInfo[i * 3 + 2];
+    }
+    bboxTransformInvAndClip(rois, bboxPreds, predBBoxes, imInfo, N, nmsMaxOut, OUTPUT_CLS_SIZE);
+    int t1_success = 0, t5_success = 0;
+    float class_max_prob = 0.0f;
+    for (unsigned int i = 0; i < N; ++i)
+    {
+	float *scores = clsProbs + i * nmsMaxOut * OUTPUT_CLS_SIZE;
+	std::vector<std::pair<std::string, float>> vec;
+	for (int c = 1; c < OUTPUT_CLS_SIZE; ++c) // skip the background
+	{
+	    class_max_prob = 0.0f;
+	    for (int r = 0; r < nmsMaxOut; ++r)
+	    	class_max_prob = MAX(class_max_prob, scores[r * OUTPUT_CLS_SIZE + c]);
+	    vec.push_back(make_pair(CLASSES[c], class_max_prob));
+	}
+	sort(vec.begin(), vec.end(), cmp);
+	if (vec[0].first == clazList[i])
+	    t1_success++;
+	if ((vec[0].first == clazList[i]) || (vec[1].first == clazList[i]) || (vec[2].first == clazList[i]) || (vec[3].first == clazList[i]) || (vec[4].first == clazList[i]))
+	    t5_success++;
+    }
+    res.top1_success = t1_success;
+    res.top5_success = t5_success;
+    std::vector<std::string>().swap(imageList);
+    std::vector<std::string>().swap(clazList);
+    return res;
+}
+	
 int main(int argc, char* argv[])
 {
     PluginFactory pluginFactory;
