@@ -34,7 +34,9 @@ static const int IM_INFO_SIZE = 3;
 static const int OUTPUT_CLS_SIZE = 21;
 static const int OUTPUT_BBOX_SIZE = OUTPUT_CLS_SIZE * 4;
 
-const std::string CLASSES[OUTPUT_CLS_SIZE]{ "background", "aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair", "cow", "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor" };
+const std::string CLASSES[OUTPUT_CLS_SIZE]{ "background", "aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair", 
+					   "cow", "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", 
+					   "train", "tvmonitor" };
 
 const char* INPUT_BLOB_NAME0 = "data";
 const char* INPUT_BLOB_NAME1 = "im_info";
@@ -77,7 +79,8 @@ std::string locateFile(const std::string& input)
 class Int8EntropyCalibrator : public IInt8EntropyCalibrator
 {
 public:
-    Int8EntropyCalibrator(DataLoader* dataloader, int batch, int height, int width, int channel, bool readCache = true) : mReadCache(readCache)
+    Int8EntropyCalibrator(DataLoader* dataloader, int batch, int height, int width, int channel, bool readCache = true)
+    : mReadCache(readCache)
     {
 	_dataloader = dataloader;
 	DimsNCHW dims = DimsNCHW(batch, channel, height, width);
@@ -142,14 +145,16 @@ void readPPMFile(const std::string& filename, PPM& ppm)
     infile.close();
 }
 
-void caffeToTRTModel(const std::string& deployFile, const std::string& modelFile, const std::vector<std::string>& outputs, unsigned int maxBatchSize, nvcaffeparser1::IPluginFactory* pluginFactory, IHostMemory **modelStream, DataType dataType)
+void caffeToTRTModel(const std::string& deployFile, const std::string& modelFile, const std::vector<std::string>& outputs, 
+		     unsigned int maxBatchSize, nvcaffeparser1::IPluginFactory* pluginFactory, IHostMemory **modelStream, DataType dataType)
 {
     IBuilder* builder = createInferBuilder(gLogger);
     INetworkDefinition* network = builder->createNetwork();
     ICaffeParser* parser = createCaffeParser();
     parser->setPluginFactory(pluginFactory);
     std::cout << "Begin to parse model" <<std::endl;
-    const IBlobNameToTensor* blobNameToTensor = parser->parse(deployFile.c_str(), modelFile.c_str(), *network, dataType == DataType::kINT8 ? DataType::kFLOAT : dataType);
+    const IBlobNameToTensor* blobNameToTensor = parser->parse(deployFile.c_str(), modelFile.c_str(), *network, 
+							      dataType == DataType::kINT8 ? DataType::kFLOAT : dataType);
     std::cout << "End to parse model" << std::endl;
     for (auto& s : outputs)
 	network->markOutput(*blobNameToTensor->find(s.c_str()));
@@ -171,7 +176,8 @@ void caffeToTRTModel(const std::string& deployFile, const std::string& modelFile
     shutdownProtobufLibrary();
 }
 
-float doInference(IExecutionContext& context, float* inputData, float* inputImInfo, float* outputBboxPred, float* outputClsProb, float *outputRois, int batchSize)
+float doInference(IExecutionContext& context, float* inputData, float* inputImInfo, float* outputBboxPred, float* outputClsProb, 
+		  float *outputRois, int batchSize)
 {
     std::cout << "Begin to do infer..." << std::endl;
     const ICudaEngine& engine = context.getEngine();
@@ -191,7 +197,8 @@ float doInference(IExecutionContext& context, float* inputData, float* inputImIn
     cudaStream_t stream;
     CHECK(cudaStreamCreate(&stream));
     // DMA the input to the GPU,  execute the batch asynchronously, and DMA it back:
-    CHECK(cudaMemcpyAsync(buffers[inputIndex0], inputData, batchSize * INPUT_C * INPUT_H * INPUT_W * sizeof(float), cudaMemcpyHostToDevice, stream));
+    CHECK(cudaMemcpyAsync(buffers[inputIndex0], inputData, batchSize * INPUT_C * INPUT_H * INPUT_W * sizeof(float), 
+			  cudaMemcpyHostToDevice, stream));
     CHECK(cudaMemcpyAsync(buffers[inputIndex1], inputImInfo, batchSize * IM_INFO_SIZE * sizeof(float), cudaMemcpyHostToDevice, stream));
     cudaStreamSynchronize(stream);
     double start = std::clock();
@@ -203,8 +210,10 @@ float doInference(IExecutionContext& context, float* inputData, float* inputImIn
     }
     ms = (std::clock()-start) / (double) CLOCKS_PER_SEC /iter * 1000;
     std::cout<< "infer total time elapse:  "<< ms << " ms" <<std::endl;
-    CHECK(cudaMemcpyAsync(outputBboxPred, buffers[outputIndex0], batchSize * nmsMaxOut * OUTPUT_BBOX_SIZE * sizeof(float), cudaMemcpyDeviceToHost, stream));
-    CHECK(cudaMemcpyAsync(outputClsProb, buffers[outputIndex1], batchSize * nmsMaxOut * OUTPUT_CLS_SIZE * sizeof(float), cudaMemcpyDeviceToHost, stream));
+    CHECK(cudaMemcpyAsync(outputBboxPred, buffers[outputIndex0], batchSize * nmsMaxOut * OUTPUT_BBOX_SIZE * sizeof(float), 
+			  cudaMemcpyDeviceToHost, stream));
+    CHECK(cudaMemcpyAsync(outputClsProb, buffers[outputIndex1], batchSize * nmsMaxOut * OUTPUT_CLS_SIZE * sizeof(float), 
+			  cudaMemcpyDeviceToHost, stream));
     CHECK(cudaMemcpyAsync(outputRois, buffers[outputIndex2], batchSize * nmsMaxOut * 4 * sizeof(float), cudaMemcpyDeviceToHost, stream));
     cudaStreamSynchronize(stream);
     CHECK(cudaFree(buffers[inputIndex0]));
@@ -442,7 +451,8 @@ RES do_each_batch(unsigned int N, int beginIdx, IExecutionContext *context, cons
 	sort(vec.begin(), vec.end(), cmp);
 	if (vec[0].first == clazList[i])
 	    t1_success++;
-	if ((vec[0].first == clazList[i]) || (vec[1].first == clazList[i]) || (vec[2].first == clazList[i]) || (vec[3].first == clazList[i]) || (vec[4].first == clazList[i]))
+	if ((vec[0].first == clazList[i]) || (vec[1].first == clazList[i]) || (vec[2].first == clazList[i]) || 
+	    (vec[3].first == clazList[i]) || (vec[4].first == clazList[i]))
 	    t5_success++;
     }
     res.top1_success = t1_success;
@@ -458,7 +468,10 @@ int main(int argc, char* argv[])
     IHostMemory *modelStream{ nullptr };
     const int N = 10;
     const int total_number = 3000;
-    caffeToTRTModel("/home/cd/TensorRT-4.0.1.6/data/faster-rcnn/faster_rcnn_test_iplugin.prototxt", "/home/cd/TensorRT-4.0.1.6/data/faster-rcnn/VGG16_faster_rcnn_final.caffemodel", std::vector < std::string > { OUTPUT_BLOB_NAME0, OUTPUT_BLOB_NAME1, OUTPUT_BLOB_NAME2 }, N, &pluginFactory, &modelStream, DataType::kINT8);
+    caffeToTRTModel("/home/cd/TensorRT-4.0.1.6/data/faster-rcnn/faster_rcnn_test_iplugin.prototxt", 
+		    "/home/cd/TensorRT-4.0.1.6/data/faster-rcnn/VGG16_faster_rcnn_final.caffemodel", 
+		    std::vector < std::string > { OUTPUT_BLOB_NAME0, OUTPUT_BLOB_NAME1, OUTPUT_BLOB_NAME2 }, 
+		    N, &pluginFactory, &modelStream, DataType::kINT8);
     pluginFactory.destroyPlugin();
     std::vector<std::string> classList;
     std::ifstream class_infile("/home/cd/TensorRT-4.0.1.6/data/faster-rcnn/classes.txt");
@@ -490,6 +503,21 @@ int main(int argc, char* argv[])
     float* bboxPreds = new float[N * nmsMaxOut * OUTPUT_BBOX_SIZE];
     float* clsProbs = new float[N * nmsMaxOut * OUTPUT_CLS_SIZE];
     float* predBBoxes = new float[N * nmsMaxOut * OUTPUT_BBOX_SIZE];
-
+	
+    for (int i = 0; i < total_number/N; ++i)
+    {
+	std::cout << "do batch " << i < " ..." << std::endl;
+	res = do_each_batch(N, i * N, context, classList, data, imInfo, ppms, rois, bboxPreds, clsProbs, predBBoxes);
+	totalTime += res.totalTime;
+	top1_success += res.top1_success;
+	top5_success += res.top5_success;
+	batch_total_number += N;
+	top1_error_rate = (batch_total_number - top1_success) / (float)batch_total_number * 100.0f;
+	top5_error_rate = (batch_total_number - top5_success) / (float)batch_total_number * 100.0f;
+	std::cout << "in this batch, avg infer time of each image=" << totalTime / batch_total_number << "ms, "
+		<< "top1 error rate=" << top1_error_rate << "%, top5 error rate=" << top5_error_rate << "%"
+		<< ", total number=" << batch_total_number << ", total top1_success=" << top1_success 
+		<< ", total top5_success=" << top5_success << std::endl;
+    }
     return 0;
 }
