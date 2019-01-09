@@ -57,9 +57,15 @@ const float anchorsScales[anchorsScaleCount] = { 8.0f, 16.0f, 32.0f };
 
 struct PPM
 {
-    std::string magic, fileName;
     int h, w, max;
-    uint8_t buffer[INPUT_C*INPUT_H*INPUT_W];
+    uint8_t buffer[INPUT_C * INPUT_H * INPUT_W];
+};
+
+struct RES
+{
+    float totalTime;
+    float top1_success;
+    float top5_success;
 };
 
 std::string locateFile(const std::string& input)
@@ -128,11 +134,12 @@ private:
 
 void readPPMFile(const std::string& filename, PPM& ppm)
 {
-    ppm.fileName = filename;
-    std::ifstream infile(filename, std::ifstream::binary);
-    infile >> ppm.magic >> ppm.w >> ppm.h >> ppm.max;
+    std::ifstream infile(filename, std::ios::in | std::ios::binary);
+    infile.seekg(3, infile.beg);
+    infile >> ppm.w >> ppm.h >> ppm.max;
     infile.seekg(1, infile.cur);
     infile.read(reinterpret_cast<char*>(ppm.buffer), ppm.w * ppm.h * 3);
+    infile.close();
 }
 
 void caffeToTRTModel(const std::string& deployFile, const std::string& modelFile, const std::vector<std::string>& outputs, unsigned int maxBatchSize, nvcaffeparser1::IPluginFactory* pluginFactory, IHostMemory **modelStream, DataType dataType)
