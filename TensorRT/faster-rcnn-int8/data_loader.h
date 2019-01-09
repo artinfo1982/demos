@@ -41,7 +41,7 @@ public:
             return false;
         }
 
-        for (int i = 0; i < _bsize; ++i) {
+        for (unsigned int i = 0; i < _bsize; ++i) {
             std::string fname = _fnames[i];
             cv::Mat img = cv::imread(fname, -1);
             cv::resize(img, img, cv::Size(_width,_height), cv::INTER_LINEAR);
@@ -76,12 +76,12 @@ public:
     }
 
 private:
-    int _cur_id;
+    unsigned int _cur_id;
     std::string _file_list;
     std::vector<std::string> _fnames;
     float* _batch;
     float* _im_info;
-    int _bsize;
+    unsigned int _bsize;
     int _width;
     int _height;
     int _channel;
