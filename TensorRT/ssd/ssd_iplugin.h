@@ -33,7 +33,34 @@ public:
   bool isPlugin(const char* name) override;
   void destroyPlugin();
   
-  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mPluginRPROI{ nullptr, nvPluginDeleter };
+  //normalize layer
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mNormalizeLayer{ nullptr, nvPluginDeleter };
+  //priorbox layers
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv4_3_norm_mbox_priorbox_layer{ nullptr, nvPluginDeleter };
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mFc7_mbox_priorbox_layer{ nullptr, nvPluginDeleter };
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv6_2_mbox_priorbox_layer{ nullptr, nvPluginDeleter };
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv7_2_mbox_priorbox_layer{ nullptr, nvPluginDeleter };
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv8_2_mbox_priorbox_layer{ nullptr, nvPluginDeleter };
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv9_2_mbox_priorbox_layer{ nullptr, nvPluginDeleter };
+  //detection output layer
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mDetection_out{ nullptr, nvPluginDeleter };
+  //permute layer
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv4_3_norm_mbox_loc_permute_layer{ nullptr, nvPluginDeleter };
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv4_3_norm_mbox_conf_permute_layer{ nullptr, nvPluginDeleter };
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mFc7_mbox_loc_permute_layer{ nullptr, nvPluginDeleter };
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mFc7_mbox_conf_permute_layer{ nullptr, nvPluginDeleter };
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv6_2_mbox_loc_permute_layer{ nullptr, nvPluginDeleter };
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv6_2_mbox_conf_permute_layer{ nullptr, nvPluginDeleter };
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv7_2_mbox_loc_permute_layer{ nullptr, nvPluginDeleter };
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv7_2_mbox_conf_permute_layer{ nullptr, nvPluginDeleter };
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv8_2_mbox_loc_permute_layer{ nullptr, nvPluginDeleter };
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv8_2_mbox_conf_permute_layer{ nullptr, nvPluginDeleter };
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv9_2_mbox_loc_permute_layer{ nullptr, nvPluginDeleter };
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv9_2_mbox_conf_permute_layer{ nullptr, nvPluginDeleter };
+  //concat layer
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mMbox_loc_concat_layer{ nullptr, nvPluginDeleter };
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mMbox_conf_concat_layer{ nullptr, nvPluginDeleter };
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mMbox_priorbox_concat_layer{ nullptr, nvPluginDeleter };
 };
 
 #endif
