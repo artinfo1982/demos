@@ -95,13 +95,13 @@ string convolution_parameter_parser(LayerParameter &lp)
   {
     s.append("    weight_filler {\n");
     FillerParameter fp = cp.weight_filler();
-    s.append(filler_parameter_parser(fp)).append("    }\n")
+    s.append(filler_parameter_parser(fp)).append("    }\n");
   }
   if (cp.has_bias_filler())
   {
     s.append("    bias_filler {\n");
     FillerParameter fp = cp.bias_filler();
-    s.append(filler_parameter_parser(fp)).append("    }\n")
+    s.append(filler_parameter_parser(fp)).append("    }\n");
   }
   s.append("  }\n");
   return s;
@@ -152,13 +152,13 @@ string inner_product_parameter_parser(LayerParameter &lp)
   {
     s.append("    weight_filler {\n");
     FillerParameter fp = ipp.weight_filler();
-    s.append(filler_parameter_parser(fp)).append("    }\n")
+    s.append(filler_parameter_parser(fp)).append("    }\n");
   }
   if (ipp.has_bias_filler())
   {
     s.append("    bias_filler {\n");
     FillerParameter fp = ipp.bias_filler();
-    s.append(filler_parameter_parser(fp)).append("    }\n")
+    s.append(filler_parameter_parser(fp)).append("    }\n");
   }
   if (ipp.has_axis())
     s.append("    axis: ").append(to_string(ipp.axis())).append("\n");
