@@ -15,17 +15,17 @@ string filler_parameter_parser(FillerParameter &fp)
   if (fp.has_type())
     s.append("      type: \"").append(fp.type()).append("\"\n");
   if (fp.has_value())
-    s.append("      value: \"").append(to_string(fp.value())).append("\n");
+    s.append("      value: ").append(to_string(fp.value())).append("\n");
   if (fp.has_min())
-    s.append("      min: \"").append(to_string(fp.min())).append("\n");
+    s.append("      min: ").append(to_string(fp.min())).append("\n");
   if (fp.has_max())
-    s.append("      max: \"").append(to_string(fp.max())).append("\n");
+    s.append("      max: ").append(to_string(fp.max())).append("\n");
   if (fp.has_mean())
-    s.append("      mean: \"").append(to_string(fp.mean())).append("\n");
+    s.append("      mean: ").append(to_string(fp.mean())).append("\n");
   if (fp.has_std())
-    s.append("      std: \"").append(to_string(fp.std())).append("\n");
+    s.append("      std: ").append(to_string(fp.std())).append("\n");
   if (fp.has_sparse())
-    s.append("      sparse: \"").append(to_string(fp.sparse())).append("\n");
+    s.append("      sparse: ").append(to_string(fp.sparse())).append("\n");
   return s;
 }
 
