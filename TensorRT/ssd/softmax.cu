@@ -8,3 +8,7 @@ __global__ void kernelSoftmax(float *x, int channels, float *y)
   __syncthreads();
   y[blockDim.x * blockIdx.x + threadIdx.x] = __fdiv_rd(number_exp, sum_value);
 }
+
+void cudaSoftmax(int n, int channels, float *x, float *y)
+{
+}
