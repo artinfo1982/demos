@@ -32,6 +32,14 @@ public:
     mCopySize = *reinterpret_cast<const size_t*>(buffer);
   }
   int initialize() override { return 0; }
+  inline void terminate() override {}
+  inline int getNbOutputs() const override { return 1; }
+  Dims getOutputDimensions(int index, const Dims* inputs, int nbInputDims) override
+  {
+    assert(nbInputDims == 1);
+    assert(index == 0);
+    return DimsCHW(inputs[0].d[0], inputs[0].d[1], inputs[0].d[2]);
+  }
 }
 
 class PluginFactory : public nvinfer1::IPluginFactory, public nvcaffeparser1::IPluginFactory
