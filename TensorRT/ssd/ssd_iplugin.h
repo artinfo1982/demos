@@ -10,13 +10,29 @@
 #include <algorithm>
 #include <vector>
 #include <memory>
+#include <iostream>
 
+#include "common.h"
 #include "NvCaffeParser.h"
 #include "NvInferPlugin.h"
 
 using namespace nvinfer1;
 using namespace nvcaffeparser1;
 using namespace plugin;
+
+void cudaSoftmax(int n, int channels, float *x, float *y);
+
+class SoftmaxPlugin : public IPlugin
+{
+public:
+  SoftmaxPlugin() {}
+  SoftmaxPlugin(const void* buffer, size_t size)
+  {
+    assert(size == sizeof(mCopySize));
+    mCopySize = *reinterpret_cast<const size_t*>(buffer);
+  }
+  int initialize() override { return 0; }
+}
 
 class PluginFactory : public nvinfer1::IPluginFactory, public nvcaffeparser1::IPluginFactory
 {
