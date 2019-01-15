@@ -32,8 +32,8 @@ class Reshape : public IPlugin
       assert(size == sizeof(mCopySize));
       mCopySize = *reinterpret_cast<const size_t *>(buffer);
     }
-    int getNbOutputs() const override { return 1; }
-    dims getOutputDimensions(int index, const Dims *inputs, int nbInputDims) override
+    int getNbOutputs() const override {return 1;}
+    Dims getOutputDimensions(int index, const Dims *inputs, int nbInputDims) override
     {
       assert(1 == nbInputDims);
       assert(0 == index);
@@ -41,16 +41,16 @@ class Reshape : public IPlugin
       assert((inputs[0].d[0]) * (inputs[0].d[1]) % OutC == 0);
       return DimsCHW(OutC, inputs[0].d[0] * inputs[0].d[1] / OutC, inputs[0].d[2]);
     }
-    int initialize() override { return 0; }
+    int initialize() override {return 0;}
     void terminate() override {}
-    size_t getWorkspaceSize(int) const override { return mCopySize * 1; }
+    size_t getWorkspaceSize(int) const override {return mCopySize * 1;}
     int enqueue(int batchSize, const void *const *inputs, void **outputs, void *, cudaStream_t stream) override
     {
       CHECK(cudaMemcpyAsync(outputs[0], inputs[0], mCopySize * batchSize, cudaMemcpyDeviceToDevice, stream));
       return 0;
     }
-    size_t getSerializationSize() override { return sizeof(mCopySize); }
-    void serialize(void *buffer) override { *reinterpret_cast<size_t *>(buffer) = mCopySize; }
+    size_t getSerializationSize() override {return sizeof(mCopySize);}
+    void serialize(void *buffer) override {*reinterpret_cast<size_t *>(buffer) = mCopySize;}
     void configure(const Dims *inputs, int nbInputs, const Dims *outputs, int nbOutputs, int) override
     {
       mCopySize = inputs[0].d[0] * inputs[0].d[1] * inputs[0].d[2] * sizeof(float);
@@ -71,8 +71,8 @@ class Flatten : public IPlugin
       _size = d[0] * d[1] * d[2];
       dimBottom = DimsCHW{d[0], d[1], d[2]};
     }
-    inline int getNbOutputs() const override { return 1; }
-    dims getOutputDimensions(int index, const Dims *inputs, int nbInputDims) override
+    inline int getNbOutputs() const override {return 1;}
+    Dims getOutputDimensions(int index, const Dims *inputs, int nbInputDims) override
     {
       assert(1 == nbInputDims);
       assert(0 == index);
@@ -80,15 +80,15 @@ class Flatten : public IPlugin
       _size = inputs[0].d[0] * inputs[0].d[1] * inputs[0].d[2];
       return DimsCHW(_size, 1, 1);
     }
-    int initialize() override { return 0; }
+    int initialize() override {return 0;}
     void terminate() override {}
-    size_t getWorkspaceSize(int) const override { return 0; }
+    size_t getWorkspaceSize(int) const override {return 0;}
     int enqueue(int batchSize, const void *const *inputs, void **outputs, void *, cudaStream_t stream) override
     {
       CHECK(cudaMemcpyAsync(outputs[0], inputs[0], batchSize * _size * sizeof(float), cudaMemcpyDeviceToDevice, stream));
       return 0;
     }
-    size_t getSerializationSize() override { return 3 * sizeof(int); }
+    size_t getSerializationSize() override {return 3 * sizeof(int);}
     void serialize(void *buffer) override
     {
       int *d = reinterpret_cast<int *>(buffer);
@@ -104,27 +104,43 @@ class Flatten : public IPlugin
   protected:
     DimsCHW dimBottom;
     int _size;
-}
+};
 
-class SoftmaxPlugin : public IPlugin
+class Softmax : public IPlugin
 {
-public:
-  SoftmaxPlugin() {}
-  SoftmaxPlugin(const void* buffer, size_t size)
-  {
-    assert(size == sizeof(mCopySize));
-    mCopySize = *reinterpret_cast<const size_t*>(buffer);
-  }
-  int initialize() override { return 0; }
-  inline void terminate() override {}
-  inline int getNbOutputs() const override { return 1; }
-  Dims getOutputDimensions(int index, const Dims* inputs, int nbInputDims) override
-  {
-    assert(nbInputDims == 1);
-    assert(index == 0);
-    return DimsCHW(inputs[0].d[0], inputs[0].d[1], inputs[0].d[2]);
-  }
-}
+  public:
+    Softmax() {}
+    Softmax(const void* buffer, size_t size)
+    {
+      assert(size == sizeof(mCopySize));
+      mCopySize = *reinterpret_cast<const size_t*>(buffer);
+    }
+    int initialize() override {return 0;}
+    inline void terminate() override {}
+    inline int getNbOutputs() const override {return 1;}
+    Dims getOutputDimensions(int index, const Dims* inputs, int nbInputDims) override
+    {
+      assert(1 == nbInputDims);
+      assert(0 == index);
+      assert(3 == inputs[index].nbDims);
+      return DimsCHW(inputs[0].d[0], inputs[0].d[1], inputs[0].d[2]);
+    }
+    size_t getWorkspaceSize(int) const override { return mCopySize * 1; }
+    int enqueue(int batchSize, const void *const *inputs, void **outputs, void *workspace, cudaStream_t stream) override
+    {
+      cudaSoftmax(8732 * 21, 21, (float *)*inputs, static_cast<float *>(*outputs));
+      return 0;
+    }
+    size_t getSerializationSize() override {return sizeof(mCopySize);}
+    void serialize(void *buffer) override {*reinterpret_cast<size_t *>(buffer) = mCopySize;}
+    void configure(const Dims *inputs, int nbInputs, const Dims *outputs, int nbOutputs, int) override
+    {
+      mCopySize = inputs[0].d[0] * inputs[0].d[1] * inputs[0].d[2] * sizeof(float);
+    }
+  
+  protected:
+    size_t mCopySize;
+};
 
 class PluginFactory : public nvinfer1::IPluginFactory, public nvcaffeparser1::IPluginFactory
 {
@@ -142,33 +158,51 @@ public:
   void destroyPlugin();
   
   //normalize layer
-  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mNormalizeLayer{ nullptr, nvPluginDeleter };
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mNormalizeLayer{nullptr, nvPluginDeleter};
   //priorbox layers
-  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv4_3_norm_mbox_priorbox_layer{ nullptr, nvPluginDeleter };
-  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mFc7_mbox_priorbox_layer{ nullptr, nvPluginDeleter };
-  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv6_2_mbox_priorbox_layer{ nullptr, nvPluginDeleter };
-  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv7_2_mbox_priorbox_layer{ nullptr, nvPluginDeleter };
-  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv8_2_mbox_priorbox_layer{ nullptr, nvPluginDeleter };
-  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv9_2_mbox_priorbox_layer{ nullptr, nvPluginDeleter };
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv4_3_norm_mbox_priorbox_layer{nullptr, nvPluginDeleter};
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mFc7_mbox_priorbox_layer{nullptr, nvPluginDeleter};
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv6_2_mbox_priorbox_layer{nullptr, nvPluginDeleter};
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv7_2_mbox_priorbox_layer{nullptr, nvPluginDeleter};
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv8_2_mbox_priorbox_layer{nullptr, nvPluginDeleter};
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv9_2_mbox_priorbox_layer{nullptr, nvPluginDeleter};
   //detection output layer
-  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mDetection_out{ nullptr, nvPluginDeleter };
-  //permute layer
-  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv4_3_norm_mbox_loc_permute_layer{ nullptr, nvPluginDeleter };
-  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv4_3_norm_mbox_conf_permute_layer{ nullptr, nvPluginDeleter };
-  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mFc7_mbox_loc_permute_layer{ nullptr, nvPluginDeleter };
-  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mFc7_mbox_conf_permute_layer{ nullptr, nvPluginDeleter };
-  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv6_2_mbox_loc_permute_layer{ nullptr, nvPluginDeleter };
-  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv6_2_mbox_conf_permute_layer{ nullptr, nvPluginDeleter };
-  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv7_2_mbox_loc_permute_layer{ nullptr, nvPluginDeleter };
-  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv7_2_mbox_conf_permute_layer{ nullptr, nvPluginDeleter };
-  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv8_2_mbox_loc_permute_layer{ nullptr, nvPluginDeleter };
-  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv8_2_mbox_conf_permute_layer{ nullptr, nvPluginDeleter };
-  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv9_2_mbox_loc_permute_layer{ nullptr, nvPluginDeleter };
-  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv9_2_mbox_conf_permute_layer{ nullptr, nvPluginDeleter };
-  //concat layer
-  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mMbox_loc_concat_layer{ nullptr, nvPluginDeleter };
-  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mMbox_conf_concat_layer{ nullptr, nvPluginDeleter };
-  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mMbox_priorbox_concat_layer{ nullptr, nvPluginDeleter };
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mDetection_out{nullptr, nvPluginDeleter};
+  //permute layers
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv4_3_norm_mbox_loc_permute_layer{nullptr, nvPluginDeleter};
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv4_3_norm_mbox_conf_permute_layer{nullptr, nvPluginDeleter};
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mFc7_mbox_loc_permute_layer{nullptr, nvPluginDeleter};
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mFc7_mbox_conf_permute_layer{nullptr, nvPluginDeleter};
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv6_2_mbox_loc_permute_layer{nullptr, nvPluginDeleter};
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv6_2_mbox_conf_permute_layer{nullptr, nvPluginDeleter};
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv7_2_mbox_loc_permute_layer{nullptr, nvPluginDeleter};
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv7_2_mbox_conf_permute_layer{nullptr, nvPluginDeleter};
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv8_2_mbox_loc_permute_layer{nullptr, nvPluginDeleter};
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv8_2_mbox_conf_permute_layer{nullptr, nvPluginDeleter};
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv9_2_mbox_loc_permute_layer{nullptr, nvPluginDeleter};
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mConv9_2_mbox_conf_permute_layer{nullptr, nvPluginDeleter};
+  //concat layers
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mMbox_loc_concat_layer{nullptr, nvPluginDeleter};
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mMbox_conf_concat_layer{nullptr, nvPluginDeleter};
+  std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)> mMbox_priorbox_concat_layer{nullptr, nvPluginDeleter};
+  //reshape layer
+  std::unique_ptr<Reshape<21>> mMbox_conf_reshape_layer{nullptr};
+  //flatten layers
+  std::unique_ptr<Flatten> mConv4_3_norm_mbox_loc_flatten_layer{nullptr};
+  std::unique_ptr<Flatten> mConv4_3_norm_mbox_conf_flatten_layer{nullptr};
+  std::unique_ptr<Flatten> mFc7_mbox_loc_flatten_layer{nullptr};
+  std::unique_ptr<Flatten> mFc7_mbox_conf_flatten_layer{nullptr};
+  std::unique_ptr<Flatten> mConv6_2_mbox_loc_flatten_layer{nullptr};
+  std::unique_ptr<Flatten> mConv6_2_mbox_conf_flatten_layer{nullptr};
+  std::unique_ptr<Flatten> mConv7_2_mbox_loc_flatten_layer{nullptr};
+  std::unique_ptr<Flatten> mConv7_2_mbox_conf_flatten_layer{nullptr};
+  std::unique_ptr<Flatten> mConv8_2_mbox_loc_flatten_layer{nullptr};
+  std::unique_ptr<Flatten> mConv8_2_mbox_conf_flatten_layer{nullptr};
+  std::unique_ptr<Flatten> mConv9_2_mbox_loc_flatten_layer{nullptr};
+  std::unique_ptr<Flatten> mConv9_2_mbox_conf_flatten_layer{nullptr};
+  std::unique_ptr<Flatten> mMbox_conf_flatten_layer{nullptr};
+  //softmax layer
+  std::unique_ptr<Softmax> mMbox_conf_softmax_layer{nullptr};
 };
 
 #endif
