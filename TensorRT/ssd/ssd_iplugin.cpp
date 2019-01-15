@@ -57,6 +57,34 @@ nvinfer1::IPlugin* createPlugin(const char* layerName, const nvinfer1::Weights* 
     assert(mNormalizeLayer == nullptr);
     bool acrossSpatial = false, channelShared = false;
     float eps = 0.0001;
-    mNormalizeLayer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDNorm)
+    mNormalizeLayer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDNormalizePlugin(weights, acrossSpatial, channelShared, eps), nvPluginDeleter);
+    return mNormalizeLayer.get();
+  }
+  //priorbox layer
+  else if (!strcmp(layerName, "conv4_3_norm_mbox_priorbox"))
+  {
+    assert(mConv4_3_norm_mbox_priorbox_layer == nullptr);
+    float min_size = 30.0f, max_size = 60.0f, aspect_ratio[2] = {1.0f, 2.0f};
+    prior_box_param.min_size = &min_size;
+    prior_box_param.max_size = &max_size;
+    prior_box_param.aspectRatios = aspect_ratio;
+    prior_box_param.numAspectRatios = 2;
+    prior_box_param.stepH = 8.0f;
+    prior_box_param.stepW = 8.0f;
+    mConv4_3_norm_mbox_priorbox_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDPriorBoxPlugin(prior_box_param), nvPluginDeleter);
+    return mConv4_3_norm_mbox_priorbox_layer.get();
+  }
+  else if (!strcmp(layerName, "fc7_mbox_priorbox"))
+  {
+    assert(mFc7_mbox_priorbox_layer == nullptr);
+    float min_size = 60.0f, max_size = 111.0f, aspect_ratio[3] = {1.0f, 2.0f, 3.0f};
+    prior_box_param.min_size = &min_size;
+    prior_box_param.max_size = &max_size;
+    prior_box_param.aspectRatios = aspect_ratio;
+    prior_box_param.numAspectRatios = 3;
+    prior_box_param.stepH = 16.0f;
+    prior_box_param.stepW = 16.0f;
+    mFc7_mbox_priorbox_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDPriorBoxPlugin(prior_box_param), nvPluginDeleter);
+    return mFc7_mbox_priorbox_layer.get();
   }
 }
