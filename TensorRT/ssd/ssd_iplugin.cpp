@@ -51,4 +51,12 @@ nvinfer1::IPlugin* createPlugin(const char* layerName, const nvinfer1::Weights* 
   permute_param.data[1] = 2;
   permute_param.data[2] = 3;
   permute_param.data[3] = 1;
+  //normalize layer
+  if (!strcmp(layerName, "conv4_3_norm"))
+  {
+    assert(mNormalizeLayer == nullptr);
+    bool acrossSpatial = false, channelShared = false;
+    float eps = 0.0001;
+    mNormalizeLayer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDNorm)
+  }
 }
