@@ -218,16 +218,6 @@ int main(int argc, char* argv[])
     IRuntime* runtime = createInferRuntime(gLogger);
     ICudaEngine* engine = runtime->deserializeCudaEngine(modelStream->data(), modelStream->size(), &pluginFactory);
     IExecutionContext *context = engine->createExecutionContext();
-    //save int8 tensorRT model
-    std::ofstream outfile("/home/cd/TensorRT-4.0.1.6/data/ssd/ssd-int8.trt", std::ios::out | std::ios::binary);
-    if (!outfile.is_open())
-    {
-	std::cout << "fail to open trt model file" << std::endl;
-	exit(1);
-    }
-    unsigned char* p = (unsigned char*)modelStream->data();
-    outfile.write((char*)p, modelStream->size());
-    outfile.close();
     float* data = new float[N  *INPUT_C * INPUT_H * INPUT_W];
     float* detectionOut = new float[N * KEEP_TOPK * 7];
     PPM* ppms = new PPM[N];
