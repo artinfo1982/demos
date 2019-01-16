@@ -318,12 +318,278 @@ nvinfer1::IPlugin* createPlugin(const char* layerName, const nvinfer1::Weights* 
     mConv9_2_mbox_conf_flatten_layer = std::unique_ptr<Flatten>(new Flatten());
     return mConv9_2_mbox_conf_flatten_layer.get();
   }
-  
-  
-  
-  
-  
-  
-  
-  
+  else if (!strcmp(layerName, "mbox_conf_flatten"))
+  {
+    assert(mMbox_conf_flatten_layer == nullptr);
+    mMbox_conf_flatten_layer = std::unique_ptr<Flatten>(new Flatten());
+    return mMbox_conf_flatten_layer.get();
+  }
+  //softmax layer
+  else if (!strcmp(layerName, "mbox_conf_softmax"))
+  {
+    assert(mMbox_conf_softmax_layer == nullptr);
+    mMbox_conf_softmax_layer = std::unique_ptr<Softmax>(new Softmax());
+    return mMbox_conf_softmax_layer.get();
+  }
+  else
+  {
+    std::cout << "ERROR, this layer is nonrecognition : " << layerName << std::endl;
+    assert(0);
+    return nullptr;
+  }
 }
+
+IPlugin *PluginFactory::createPlugin(const char *layerName, const void *serialData, size_t serialLength)
+{
+  assert(isPlugin(layerName));
+  //normalize layer
+  if (!strcmp(layerName, "conv4_3_norm"))
+  {
+    assert(mNormalizeLayer == nullptr);
+    mNormalizeLayer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDNormalizePlugin(serialData, serialLength), nvPluginDeleter);
+    return mNormalizeLayer.get();
+  }
+  //priorbox layer
+  else if (!strcmp(layerName, "conv4_3_norm_mbox_priorbox"))
+  {
+    assert(mConv4_3_norm_mbox_priorbox_layer == nullptr);
+    mConv4_3_norm_mbox_priorbox_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDPriorBoxPlugin(serialData, serialLength), nvPluginDeleter);
+    return mConv4_3_norm_mbox_priorbox_layer.get();
+  }
+  else if (!strcmp(layerName, "fc7_mbox_priorbox"))
+  {
+    assert(mFc7_mbox_priorbox_layer == nullptr);
+    mFc7_mbox_priorbox_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDPriorBoxPlugin(serialData, serialLength), nvPluginDeleter);
+    return mFc7_mbox_priorbox_layer.get();
+  }
+  else if (!strcmp(layerName, "conv6_2_mbox_priorbox"))
+  {
+    assert(mConv6_2_mbox_priorbox_layer == nullptr);
+    mConv6_2_mbox_priorbox_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDPriorBoxPlugin(serialData, serialLength), nvPluginDeleter);
+    return mConv6_2_mbox_priorbox_layer.get();
+  }
+  else if (!strcmp(layerName, "conv7_2_mbox_priorbox"))
+  {
+    assert(mConv7_2_mbox_priorbox_layer == nullptr);
+    mConv7_2_mbox_priorbox_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDPriorBoxPlugin(serialData, serialLength), nvPluginDeleter);
+    return mConv7_2_mbox_priorbox_layer.get();
+  }
+  else if (!strcmp(layerName, "conv8_2_mbox_priorbox"))
+  {
+    assert(mConv8_2_mbox_priorbox_layer == nullptr);
+    mConv8_2_mbox_priorbox_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDPriorBoxPlugin(serialData, serialLength), nvPluginDeleter);
+    return mConv8_2_mbox_priorbox_layer.get();
+  }
+  else if (!strcmp(layerName, "conv9_2_mbox_priorbox"))
+  {
+    assert(mConv9_2_mbox_priorbox_layer == nullptr);
+    mConv9_2_mbox_priorbox_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDPriorBoxPlugin(serialData, serialLength), nvPluginDeleter);
+    return mConv9_2_mbox_priorbox_layer.get();
+  }
+  //detection output layer
+  else if (!strcmp(layerName, "detection_out"))
+  {
+    assert(mDetection_out == nullptr);
+    mDetection_out = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDDetectionOutputPlugin(serialData, serialLength), nvPluginDeleter);
+    return mDetection_out.get();
+  }
+  //permute layers
+  else if (!strcmp(layerName, "conv4_3_norm_mbox_loc_perm"))
+  {
+    assert(mConv4_3_norm_mbox_loc_permute_layer == nullptr);
+    mConv4_3_norm_mbox_loc_permute_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDPermutePlugin(serialData, serialLength), nvPluginDeleter);
+    return mConv4_3_norm_mbox_loc_permute_layer.get();
+  }
+  else if (!strcmp(layerName, "conv4_3_norm_mbox_conf_perm"))
+  {
+    assert(mConv4_3_norm_mbox_conf_permute_layer == nullptr);
+    mConv4_3_norm_mbox_conf_permute_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDPermutePlugin(serialData, serialLength), nvPluginDeleter);
+    return mConv4_3_norm_mbox_conf_permute_layer.get();
+  }
+  else if (!strcmp(layerName, "fc7_mbox_loc_perm"))
+  {
+    assert(mFc7_mbox_loc_permute_layer == nullptr);
+    mFc7_mbox_loc_permute_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDPermutePlugin(serialData, serialLength), nvPluginDeleter);
+    return mFc7_mbox_loc_permute_layer.get();
+  }
+  else if (!strcmp(layerName, "fc7_mbox_conf_perm"))
+  {
+    assert(mFc7_mbox_conf_permute_layer == nullptr);
+    mFc7_mbox_conf_permute_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDPermutePlugin(serialData, serialLength), nvPluginDeleter);
+    return mFc7_mbox_conf_permute_layer.get();
+  }
+  else if (!strcmp(layerName, "conv6_2_mbox_loc_perm"))
+  {
+    assert(mConv6_2_mbox_loc_permute_layer == nullptr);
+    mConv6_2_mbox_loc_permute_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDPermutePlugin(serialData, serialLength), nvPluginDeleter);
+    return mConv6_2_mbox_loc_permute_layer.get();
+  }
+  else if (!strcmp(layerName, "conv6_2_mbox_conf_perm"))
+  {
+    assert(mConv6_2_mbox_conf_permute_layer == nullptr);
+    mConv6_2_mbox_conf_permute_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDPermutePlugin(serialData, serialLength), nvPluginDeleter);
+    return mConv6_2_mbox_conf_permute_layer.get();
+  }
+  else if (!strcmp(layerName, "conv7_2_mbox_loc_perm"))
+  {
+    assert(mConv7_2_mbox_loc_permute_layer == nullptr);
+    mConv7_2_mbox_loc_permute_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDPermutePlugin(serialData, serialLength), nvPluginDeleter);
+    return mConv7_2_mbox_loc_permute_layer.get();
+  }
+  else if (!strcmp(layerName, "conv7_2_mbox_conf_perm"))
+  {
+    assert(mConv7_2_mbox_conf_permute_layer == nullptr);
+    mConv7_2_mbox_conf_permute_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDPermutePlugin(serialData, serialLength), nvPluginDeleter);
+    return mConv7_2_mbox_conf_permute_layer.get();
+  }
+  else if (!strcmp(layerName, "conv8_2_mbox_loc_perm"))
+  {
+    assert(mConv8_2_mbox_loc_permute_layer == nullptr);
+    mConv8_2_mbox_loc_permute_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDPermutePlugin(serialData, serialLength), nvPluginDeleter);
+    return mConv8_2_mbox_loc_permute_layer.get();
+  }
+  else if (!strcmp(layerName, "conv8_2_mbox_conf_perm"))
+  {
+    assert(mConv8_2_mbox_conf_permute_layer == nullptr);
+    mConv8_2_mbox_conf_permute_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDPermutePlugin(serialData, serialLength), nvPluginDeleter);
+    return mConv8_2_mbox_conf_permute_layer.get();
+  }
+  else if (!strcmp(layerName, "conv9_2_mbox_loc_perm"))
+  {
+    assert(mConv9_2_mbox_loc_permute_layer == nullptr);
+    mConv9_2_mbox_loc_permute_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDPermutePlugin(serialData, serialLength), nvPluginDeleter);
+    return mConv9_2_mbox_loc_permute_layer.get();
+  }
+  else if (!strcmp(layerName, "conv9_2_mbox_conf_perm"))
+  {
+    assert(mConv9_2_mbox_conf_permute_layer == nullptr);
+    mConv9_2_mbox_conf_permute_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDPermutePlugin(serialData, serialLength), nvPluginDeleter);
+    return mConv9_2_mbox_conf_permute_layer.get();
+  }
+  //concat layers
+  else if (!strcmp(layerName, "mbox_loc"))
+  {
+    assert(mMbox_loc_concat_layer == nullptr);
+    mMbox_loc_concat_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createConcatPlugin(serialData, serialLength), nvPluginDeleter);
+    return mMbox_loc_concat_layer.get();
+  }
+  else if (!strcmp(layerName, "mbox_conf"))
+  {
+    assert(mMbox_conf_concat_layer == nullptr);
+    mMbox_conf_concat_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createConcatPlugin(serialData, serialLength), nvPluginDeleter);
+    return mMbox_conf_concat_layer.get();
+  }
+  else if (!strcmp(layerName, "mbox_priorbox"))
+  {
+    assert(mMbox_priorbox_concat_layer == nullptr);
+    mMbox_priorbox_concat_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createConcatPlugin(serialData, serialLength), nvPluginDeleter);
+    return mMbox_priorbox_concat_layer.get();
+  }
+  //reshape layer
+  else if (!strcmp(layerName, "mbox_conf_reshape"))
+  {
+    assert(mMbox_conf_reshape_layer == nullptr);
+    mMbox_conf_reshape_layer = std::unique_ptr<Reshape<21>>(new Reshape<21>(serialData, serialLength));
+    return mMbox_conf_reshape_layer.get();
+  }
+  //flatten layers
+  else if (!strcmp(layerName, "conv4_3_norm_mbox_loc_flat"))
+  {
+    assert(mConv4_3_norm_mbox_loc_flatten_layer == nullptr);
+    mConv4_3_norm_mbox_loc_flatten_layer = std::unique_ptr<Flatten>(new Flatten(serialData, serialLength));
+    return mConv4_3_norm_mbox_loc_flatten_layer.get();
+  }
+  else if (!strcmp(layerName, "conv4_3_norm_mbox_conf_flat"))
+  {
+    assert(mConv4_3_norm_mbox_conf_flatten_layer == nullptr);
+    mConv4_3_norm_mbox_conf_flatten_layer = std::unique_ptr<Flatten>(new Flatten(serialData, serialLength));
+    return mConv4_3_norm_mbox_conf_flatten_layer.get();
+  }
+  else if (!strcmp(layerName, "fc7_mbox_loc_flat"))
+  {
+    assert(mFc7_mbox_loc_flatten_layer == nullptr);
+    mFc7_mbox_loc_flatten_layer = std::unique_ptr<Flatten>(new Flatten(serialData, serialLength));
+    return mFc7_mbox_loc_flatten_layer.get();
+  }
+  else if (!strcmp(layerName, "fc7_mbox_conf_flat"))
+  {
+    assert(mFc7_mbox_conf_flatten_layer == nullptr);
+    mFc7_mbox_conf_flatten_layer = std::unique_ptr<Flatten>(new Flatten(serialData, serialLength));
+    return mFc7_mbox_conf_flatten_layer.get();
+  }
+  else if (!strcmp(layerName, "conv6_2_mbox_loc_flat"))
+  {
+    assert(mConv6_2_mbox_loc_flatten_layer == nullptr);
+    mConv6_2_mbox_loc_flatten_layer = std::unique_ptr<Flatten>(new Flatten(serialData, serialLength));
+    return mConv6_2_mbox_loc_flatten_layer.get();
+  }
+  else if (!strcmp(layerName, "conv6_2_mbox_conf_flat"))
+  {
+    assert(mConv6_2_mbox_conf_flatten_layer == nullptr);
+    mConv6_2_mbox_conf_flatten_layer = std::unique_ptr<Flatten>(new Flatten(serialData, serialLength));
+    return mConv6_2_mbox_conf_flatten_layer.get();
+  }
+  else if (!strcmp(layerName, "conv7_2_mbox_loc_flat"))
+  {
+    assert(mConv7_2_mbox_loc_flatten_layer == nullptr);
+    mConv7_2_mbox_loc_flatten_layer = std::unique_ptr<Flatten>(new Flatten(serialData, serialLength));
+    return mConv7_2_mbox_loc_flatten_layer.get();
+  }
+  else if (!strcmp(layerName, "conv7_2_mbox_conf_flat"))
+  {
+    assert(mConv7_2_mbox_conf_flatten_layer == nullptr);
+    mConv7_2_mbox_conf_flatten_layer = std::unique_ptr<Flatten>(new Flatten(serialData, serialLength));
+    return mConv7_2_mbox_conf_flatten_layer.get();
+  }
+  else if (!strcmp(layerName, "conv8_2_mbox_loc_flat"))
+  {
+    assert(mConv8_2_mbox_loc_flatten_layer == nullptr);
+    mConv8_2_mbox_loc_flatten_layer = std::unique_ptr<Flatten>(new Flatten(serialData, serialLength));
+    return mConv8_2_mbox_loc_flatten_layer.get();
+  }
+  else if (!strcmp(layerName, "conv8_2_mbox_conf_flat"))
+  {
+    assert(mConv8_2_mbox_conf_flatten_layer == nullptr);
+    mConv8_2_mbox_conf_flatten_layer = std::unique_ptr<Flatten>(new Flatten(serialData, serialLength));
+    return mConv8_2_mbox_conf_flatten_layer.get();
+  }
+  else if (!strcmp(layerName, "conv9_2_mbox_loc_flat"))
+  {
+    assert(mConv9_2_mbox_loc_flatten_layer == nullptr);
+    mConv9_2_mbox_loc_flatten_layer = std::unique_ptr<Flatten>(new Flatten(serialData, serialLength));
+    return mConv9_2_mbox_loc_flatten_layer.get();
+  }
+  else if (!strcmp(layerName, "conv9_2_mbox_conf_flat"))
+  {
+    assert(mConv9_2_mbox_conf_flatten_layer == nullptr);
+    mConv9_2_mbox_conf_flatten_layer = std::unique_ptr<Flatten>(new Flatten(serialData, serialLength));
+    return mConv9_2_mbox_conf_flatten_layer.get();
+  }
+  else if (!strcmp(layerName, "mbox_conf_flatten"))
+  {
+    assert(mMbox_conf_flatten_layer == nullptr);
+    mMbox_conf_flatten_layer = std::unique_ptr<Flatten>(new Flatten(serialData, serialLength));
+    return mMbox_conf_flatten_layer.get();
+  }
+  //softmax layer
+  else if (!strcmp(layerName, "mbox_conf_softmax"))
+  {
+    assert(mMbox_conf_softmax_layer == nullptr);
+    mMbox_conf_softmax_layer = std::unique_ptr<Softmax>(new Softmax(serialData, serialLength));
+    return mMbox_conf_softmax_layer.get();
+  }
+  else
+  {
+    std::cout << "ERROR, this layer is nonrecognition : " << layerName << std::endl;
+    assert(0);
+    return nullptr;
+  }
+}
+
+
+
+
+
+
+
+
