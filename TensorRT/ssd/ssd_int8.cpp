@@ -51,7 +51,7 @@ std::string locateFile(const std::string& input)
 {
     std::vector<std::string> dirs{"data/ssd/", "data/samples/ssd/"};
     return locateFile(input, dirs);
-};
+}
 
 class Int8EntropyCalibrator : public IInt8EntropyCalibrator
 {
