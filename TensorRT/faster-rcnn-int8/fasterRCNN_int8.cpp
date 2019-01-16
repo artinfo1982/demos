@@ -179,7 +179,6 @@ void caffeToTRTModel(const std::string& deployFile, const std::string& modelFile
 float doInference(IExecutionContext& context, float* inputData, float* inputImInfo, float* outputBboxPred, float* outputClsProb, 
 		  float *outputRois, int batchSize)
 {
-    std::cout << "Begin to do infer..." << std::endl;
     const ICudaEngine& engine = context.getEngine();
     assert(engine.getNbBindings() == 5);
     void* buffers[5];
@@ -222,7 +221,6 @@ float doInference(IExecutionContext& context, float* inputData, float* inputImIn
     CHECK(cudaFree(buffers[outputIndex1]));
     CHECK(cudaFree(buffers[outputIndex2]));
     cudaStreamDestroy(stream);
-    std::cout << "End to do infer..." << std::endl;
     return ms;
 }
 
