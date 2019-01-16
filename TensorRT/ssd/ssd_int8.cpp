@@ -246,3 +246,60 @@ RES do_each_batch(unsigned int N, int beginIdx, IExecutionContext *context, cons
     std::vector<std::string>().swap(clazList);
     return res;
 }
+
+int main(int argc, char* argv[])
+{
+    PluginFactory pluginFactory;
+    IHostMemory *modelStream{ nullptr };
+    const int N = 10;
+    const int total_number = 3000;
+    caffeToTRTModel("/home/cd/TensorRT-4.0.1.6/data/ssd/ssd_iplugin.prototxt", 
+		    "/home/cd/TensorRT-4.0.1.6/data/ssd/VGG_VOC0712_SSD_300x300_iter_120000.caffemodel", 
+		    std::vector < std::string > { OUTPUT_BLOB_NAME0, OUTPUT_BLOB_NAME1 }, 
+		    N, &pluginFactory, &modelStream, DataType::kINT8);
+    pluginFactory.destroyPlugin();
+    std::vector<std::string> classList;
+    std::ifstream class_infile("/home/cd/TensorRT-4.0.1.6/data/ssd/classes.txt");
+    std::string tmp;
+    while (class_infile >> tmp)
+	classList.push_back(tmp);
+    RES res = {0};
+    float totalTime = 0.0f;
+    int batch_total_number = 0;
+    int top1_success = 0, top5_success = 0;
+    float top1_error_rate = 0.0f, top5_error_rate = 0.0f;
+    IRuntime* runtime = createInferRuntime(gLogger);
+    ICudaEngine* engine = runtime->deserializeCudaEngine(modelStream->data(), modelStream->size(), &pluginFactory);
+    IExecutionContext *context = engine->createExecutionContext();
+    //save int8 tensorRT model
+    std::ofstream outfile("/home/cd/TensorRT-4.0.1.6/data/ssd/ssd-int8.trt", std::ios::out | std::ios::binary);
+    if (!outfile.is_open())
+    {
+	std::cout << "fail to open trt model file" << std::endl;
+	exit(1);
+    }
+    unsigned char* p = (unsigned char*)modelStream->data();
+    outfile.write((char*)p, modelStream->size());
+    outfile.close();
+    float* data = new float[N  *INPUT_C * INPUT_H * INPUT_W];
+    float* detectionOut = new float[N * KEEP_TOPK * 7];
+    PPM* ppms = new PPM[N];
+    int* keepCount = new int[N];
+	
+    for (int i = 0; i < total_number/N; ++i)
+    {
+	std::cout << "do batch " << i < " ..." << std::endl;
+	res = do_each_batch(N, i * N, context, classList, data, detectionOut, ppms, keepCount);
+	totalTime += res.totalTime;
+	top1_success += res.top1_success;
+	top5_success += res.top5_success;
+	batch_total_number += N;
+	top1_error_rate = (batch_total_number - top1_success) / (float)batch_total_number * 100.0f;
+	top5_error_rate = (batch_total_number - top5_success) / (float)batch_total_number * 100.0f;
+	std::cout << "in this batch, avg infer time of each image=" << totalTime / batch_total_number << "ms, "
+		<< "top1 error rate=" << top1_error_rate << "%, top5 error rate=" << top5_error_rate << "%"
+		<< ", total number=" << batch_total_number << ", total top1_success=" << top1_success 
+		<< ", total top5_success=" << top5_success << std::endl;
+    }
+    return 0;
+}
