@@ -3,6 +3,7 @@
 #include <cstring>
 #include <cuda_runtime_api.h>
 #include <unordered_map>
+#include <ctime>
 #include <iterator>
 #include <algorithm>
 
@@ -11,8 +12,9 @@
 #include "NvInferPlugin.h"
 #include "common.h"
 
-#include "data_loader.h"
 #include "ssd_iplugin.h"
+
+#define MAX(a, b) (((a) > (b)) ? (a) : (b))
 
 static Logger gLogger;
 using namespace nvinfer1;
@@ -51,59 +53,7 @@ std::string locateFile(const std::string& input)
 {
     std::vector<std::string> dirs{"data/ssd/", "data/samples/ssd/"};
     return locateFile(input, dirs);
-};
-
-class Int8EntropyCalibrator : public IInt8EntropyCalibrator
-{
-  public:
-    Int8EntropyCalibrator(DataLoader* dataloader, int batch, int height, int width, int channel, bool readCache = true)
-      : mReadCache(readCache)
-    {
-    	_dataloader = dataloader;
-	DimsNCHW dims = DimsNCHW(batch, channel, height, width);
-	mInputCount = batch * dims.c() * dims.h() * dims.w();
-	CHECK(cudaMalloc(&mDeviceInput, mInputCount * sizeof(float)));
-    }
-    virtual ~Int8EntropyCalibrator()
-    {
-	CHECK(cudaFree(mDeviceInput));
-    }
-    int getBatchSize() const override { return 2; }
-    bool getBatch(void* bindings[], const char* names[], int nbBindings) override
-    {
-	if(!_dataloader->next())
-	    return false;
-      	CHECK(cudaMemcpy(mDeviceInput, _dataloader->getBatch(),  mInputCount * sizeof(float), cudaMemcpyHostToDevice));
-      	bindings[0] = mDeviceInput;
-      	return true;
-    }
-    const void* readCalibrationCache(size_t& length) override
-    {
-	std::cout << "Reading from cache: "<< calibrationTableName()<<std::endl;
-	mCalibrationCache.clear();
-	std::ifstream input(calibrationTableName(), std::ios::binary);
-	input >> std::noskipws;
-	if (mReadCache && input.good())
-	    std::copy(std::istream_iterator<char>(input), std::istream_iterator<char>(), std::back_inserter(mCalibrationCache));
-	length = mCalibrationCache.size();
-	return length ? &mCalibrationCache[0] : nullptr;
-    }
-    void writeCalibrationCache(const void* cache, size_t length) override
-    {
-	std::ofstream output(calibrationTableName(), std::ios::binary);
-	output.write(reinterpret_cast<const char*>(cache), length);
-    }
-  private:
-    static std::string calibrationTableName()
-    {
-        return std::string("CalibrationTable_SSD_VGG16");
-    }
-    bool mReadCache{ true };
-    size_t mInputCount;
-    void* mDeviceInput{ nullptr };
-    std::vector<char> mCalibrationCache;
-    DataLoader* _dataloader;
-};
+}
 
 void readPPMFile(const std::string& filename, PPM& ppm)
 {
@@ -130,10 +80,7 @@ void caffeToTRTModel(const std::string& deployFile, const std::string& modelFile
 	network->markOutput(*blobNameToTensor->find(s.c_str()));
     builder->setMaxBatchSize(maxBatchSize);
     builder->setMaxWorkspaceSize(1 << 30);
-    builder->setInt8Mode(true);
-    DataLoader* dataLoader = new DataLoader(maxBatchSize, "/home/cd/TensorRT-4.0.1.6/data/ssd/list.txt", 300, 300, 3);
-    Int8EntropyCalibrator* calibrator = new Int8EntropyCalibrator(dataLoader, maxBatchSize, 300, 300, 3);
-    builder->setInt8Calibrator(calibrator);
+    builder->setInt8Mode(false);
     std::cout << "Begin to build engine..." << std::endl;
     ICudaEngine* engine = builder->buildCudaEngine(*network);
     assert(engine);
@@ -256,7 +203,7 @@ int main(int argc, char* argv[])
     caffeToTRTModel("/home/cd/TensorRT-4.0.1.6/data/ssd/ssd_iplugin.prototxt", 
 		    "/home/cd/TensorRT-4.0.1.6/data/ssd/VGG_VOC0712_SSD_300x300_iter_120000.caffemodel", 
 		    std::vector < std::string > { OUTPUT_BLOB_NAME0, OUTPUT_BLOB_NAME1 }, 
-		    N, &pluginFactory, &modelStream, DataType::kINT8);
+		    N, &pluginFactory, &modelStream, DataType::kFLOAT);
     pluginFactory.destroyPlugin();
     std::vector<std::string> classList;
     std::ifstream class_infile("/home/cd/TensorRT-4.0.1.6/data/ssd/classes.txt");
