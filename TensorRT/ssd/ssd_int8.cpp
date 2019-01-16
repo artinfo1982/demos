@@ -59,55 +59,48 @@ class Int8EntropyCalibrator : public IInt8EntropyCalibrator
     Int8EntropyCalibrator(DataLoader* dataloader, int batch, int height, int width, int channel, bool readCache = true)
       : mReadCache(readCache)
     {
-	    _dataloader = dataloader;
-	    DimsNCHW dims = DimsNCHW(batch, channel, height, width);
-	    mInputCount1 = batch * dims.c() * dims.h() * dims.w();
-	    CHECK(cudaMalloc(&mDeviceInput1, mInputCount1 * sizeof(float)));
-	    mInputCount2 = batch * 3;
-	    CHECK(cudaMalloc(&mDeviceInput2, mInputCount2 * sizeof(float)));
+    	_dataloader = dataloader;
+	DimsNCHW dims = DimsNCHW(batch, channel, height, width);
+	mInputCount = batch * dims.c() * dims.h() * dims.w();
+	CHECK(cudaMalloc(&mDeviceInput, mInputCount * sizeof(float)));
     }
     virtual ~Int8EntropyCalibrator()
     {
-	    CHECK(cudaFree(mDeviceInput1));
-	    CHECK(cudaFree(mDeviceInput2));
+	CHECK(cudaFree(mDeviceInput));
     }
     int getBatchSize() const override { return 2; }
     bool getBatch(void* bindings[], const char* names[], int nbBindings) override
     {
-	    if(!_dataloader->next())
-	      return false;
-      CHECK(cudaMemcpy(mDeviceInput1, _dataloader->getBatch(),  mInputCount1 * sizeof(float), cudaMemcpyHostToDevice));
-	    CHECK(cudaMemcpy(mDeviceInput2, _dataloader->getIminfo(), mInputCount2 * sizeof(float), cudaMemcpyHostToDevice));
-      bindings[0] = mDeviceInput1;
-      bindings[1] = mDeviceInput2;
-      return true;
+	if(!_dataloader->next())
+	    return false;
+      	CHECK(cudaMemcpy(mDeviceInput, _dataloader->getBatch(),  mInputCount * sizeof(float), cudaMemcpyHostToDevice));
+      	bindings[0] = mDeviceInput;
+      	return true;
     }
     const void* readCalibrationCache(size_t& length) override
     {
-	    std::cout << "Reading from cache: "<< calibrationTableName()<<std::endl;
-	    mCalibrationCache.clear();
-	    std::ifstream input(calibrationTableName(), std::ios::binary);
-	    input >> std::noskipws;
-	    if (mReadCache && input.good())
-	      std::copy(std::istream_iterator<char>(input), std::istream_iterator<char>(), std::back_inserter(mCalibrationCache));
-	    length = mCalibrationCache.size();
-	    return length ? &mCalibrationCache[0] : nullptr;
+	std::cout << "Reading from cache: "<< calibrationTableName()<<std::endl;
+	mCalibrationCache.clear();
+	std::ifstream input(calibrationTableName(), std::ios::binary);
+	input >> std::noskipws;
+	if (mReadCache && input.good())
+	    std::copy(std::istream_iterator<char>(input), std::istream_iterator<char>(), std::back_inserter(mCalibrationCache));
+	length = mCalibrationCache.size();
+	return length ? &mCalibrationCache[0] : nullptr;
     }
     void writeCalibrationCache(const void* cache, size_t length) override
     {
-	    std::ofstream output(calibrationTableName(), std::ios::binary);
-	    output.write(reinterpret_cast<const char*>(cache), length);
+	std::ofstream output(calibrationTableName(), std::ios::binary);
+	output.write(reinterpret_cast<const char*>(cache), length);
     }
   private:
     static std::string calibrationTableName()
     {
-        return std::string("CalibrationTable") + "vgg16";
+        return std::string("CalibrationTable_SSD_VGG16");
     }
     bool mReadCache{ true };
-    size_t mInputCount1;
-    size_t mInputCount2;
-    void* mDeviceInput1{ nullptr };
-    void* mDeviceInput2{ nullptr };
+    size_t mInputCount;
+    void* mDeviceInput{ nullptr };
     std::vector<char> mCalibrationCache;
     DataLoader* _dataloader;
 };
