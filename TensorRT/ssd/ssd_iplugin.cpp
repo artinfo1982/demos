@@ -87,4 +87,56 @@ nvinfer1::IPlugin* createPlugin(const char* layerName, const nvinfer1::Weights* 
     mFc7_mbox_priorbox_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDPriorBoxPlugin(prior_box_param), nvPluginDeleter);
     return mFc7_mbox_priorbox_layer.get();
   }
+  else if (!strcmp(layerName, "conv6_2_mbox_priorbox"))
+  {
+    assert(mConv6_2_mbox_priorbox_layer == nullptr);
+    float min_size = 111.0f, max_size = 162.0f, aspect_ratio[3] = {1.0f, 2.0f, 3.0f};
+    prior_box_param.min_size = &min_size;
+    prior_box_param.max_size = &max_size;
+    prior_box_param.aspectRatios = aspect_ratio;
+    prior_box_param.numAspectRatios = 3;
+    prior_box_param.stepH = 32.0f;
+    prior_box_param.stepW = 32.0f;
+    mConv6_2_mbox_priorbox_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDPriorBoxPlugin(prior_box_param), nvPluginDeleter);
+    return mConv6_2_mbox_priorbox_layer.get();
+  }
+  else if (!strcmp(layerName, "conv7_2_mbox_priorbox"))
+  {
+    assert(mConv7_2_mbox_priorbox_layer == nullptr);
+    float min_size = 162.0f, max_size = 213.0f, aspect_ratio[3] = {1.0f, 2.0f, 3.0f};
+    prior_box_param.min_size = &min_size;
+    prior_box_param.max_size = &max_size;
+    prior_box_param.aspectRatios = aspect_ratio;
+    prior_box_param.numAspectRatios = 3;
+    prior_box_param.stepH = 64.0f;
+    prior_box_param.stepW = 64.0f;
+    mConv7_2_mbox_priorbox_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDPriorBoxPlugin(prior_box_param), nvPluginDeleter);
+    return mConv7_2_mbox_priorbox_layer.get();
+  }
+  else if (!strcmp(layerName, "conv8_2_mbox_priorbox"))
+  {
+    assert(mConv8_2_mbox_priorbox_layer == nullptr);
+    float min_size = 213.0f, max_size = 264.0f, aspect_ratio[2] = {1.0f, 2.0f};
+    prior_box_param.min_size = &min_size;
+    prior_box_param.max_size = &max_size;
+    prior_box_param.aspectRatios = aspect_ratio;
+    prior_box_param.numAspectRatios = 2;
+    prior_box_param.stepH = 100.0f;
+    prior_box_param.stepW = 100.0f;
+    mConv8_2_mbox_priorbox_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDPriorBoxPlugin(prior_box_param), nvPluginDeleter);
+    return mConv8_2_mbox_priorbox_layer.get();
+  }
+  else if (!strcmp(layerName, "conv9_2_mbox_priorbox"))
+  {
+    assert(mConv9_2_mbox_priorbox_layer == nullptr);
+    float min_size = 264.0f, max_size = 315.0f, aspect_ratio[2] = {1.0f, 2.0f};
+    prior_box_param.min_size = &min_size;
+    prior_box_param.max_size = &max_size;
+    prior_box_param.aspectRatios = aspect_ratio;
+    prior_box_param.numAspectRatios = 2;
+    prior_box_param.stepH = 300.0f;
+    prior_box_param.stepW = 300.0f;
+    mConv9_2_mbox_priorbox_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDPriorBoxPlugin(prior_box_param), nvPluginDeleter);
+    return mConv9_2_mbox_priorbox_layer.get();
+  }
 }
