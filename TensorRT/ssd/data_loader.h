@@ -7,7 +7,6 @@
 #include <vector>
 #include <opencv2/opencv.hpp>
 
-
 class DataLoader
 {
 public:
@@ -20,10 +19,7 @@ public:
         _height = height;
         _channel = channel;
         _batch = new float[ _bsize*_width*_height*_channel];
-        _im_info = new float[_bsize * 3];
-
         std::ifstream infile(file_list);
-
         std::string tmp;
         while(infile >> tmp) {
             _fnames.push_back(tmp);
@@ -33,23 +29,14 @@ public:
         _cur_id = 0;
     }
     float *getBatch() { return  _batch; }
-    float *getIminfo() { return _im_info;}
-
     bool next(){
         std::cout<< "calling next(). Cur_id: "<< _cur_id<<std::endl;
         if(_cur_id + _bsize >= _fnames.size()){
             return false;
         }
-
         for (unsigned int i = 0; i < _bsize; ++i) {
             std::string fname = _fnames[i];
             cv::Mat img = cv::imread(fname, -1);
-            cv::resize(img, img, cv::Size(_width,_height), cv::INTER_LINEAR);
-
-            _im_info[i*3 + 0] = 375;
-            _im_info[i*3 + 1] = 500;
-            _im_info[i*3 + 2] = 1;
-
             int ww = img.cols;
             int hh = img.rows;
             int cc = img.channels();
@@ -64,8 +51,8 @@ public:
                     }
                 }
             }
+            img.relase();
         }
-        // read file and concat
         _cur_id += _bsize;
         return true;
     }
@@ -80,12 +67,11 @@ private:
     std::string _file_list;
     std::vector<std::string> _fnames;
     float* _batch;
-    float* _im_info;
     unsigned int _bsize;
     int _width;
     int _height;
     int _channel;
 
-}; // class: DataLoader
+};
 
 #endif
