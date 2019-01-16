@@ -219,4 +219,111 @@ nvinfer1::IPlugin* createPlugin(const char* layerName, const nvinfer1::Weights* 
     mConv9_2_mbox_conf_permute_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDPermutePlugin(permute_param), nvPluginDeleter);
     return mConv9_2_mbox_conf_permute_layer.get();
   }
+  //concat layers
+  else if (!strcmp(layerName, "mbox_loc"))
+  {
+    assert(mMbox_loc_concat_layer == nullptr);
+    mMbox_loc_concat_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createConcatPlugin(1, true), nvPluginDeleter);
+    return mMbox_loc_concat_layer.get();
+  }
+  else if (!strcmp(layerName, "mbox_conf"))
+  {
+    assert(mMbox_conf_concat_layer == nullptr);
+    mMbox_conf_concat_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createConcatPlugin(1, true), nvPluginDeleter);
+    return mMbox_conf_concat_layer.get();
+  }
+  else if (!strcmp(layerName, "mbox_priorbox"))
+  {
+    assert(mMbox_priorbox_concat_layer == nullptr);
+    mMbox_priorbox_concat_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createConcatPlugin(2, true), nvPluginDeleter);
+    return mMbox_priorbox_concat_layer.get();
+  }
+  //reshape layer
+  else if (!strcmp(layerName, "mbox_conf_reshape"))
+  {
+    assert(mMbox_conf_reshape_layer == nullptr);
+    mMbox_conf_reshape_layer = std::unique_ptr<Reshape<21>>(new Reshape<21>());
+    return mMbox_conf_reshape_layer.get();
+  }
+  //flatten layers
+  else if (!strcmp(layerName, "conv4_3_norm_mbox_loc_flat"))
+  {
+    assert(mConv4_3_norm_mbox_loc_flatten_layer == nullptr);
+    mConv4_3_norm_mbox_loc_flatten_layer = std::unique_ptr<Flatten>(new Flatten());
+    return mConv4_3_norm_mbox_loc_flatten_layer.get();
+  }
+  else if (!strcmp(layerName, "conv4_3_norm_mbox_conf_flat"))
+  {
+    assert(mConv4_3_norm_mbox_conf_flatten_layer == nullptr);
+    mConv4_3_norm_mbox_conf_flatten_layer = std::unique_ptr<Flatten>(new Flatten());
+    return mConv4_3_norm_mbox_conf_flatten_layer.get();
+  }
+  else if (!strcmp(layerName, "fc7_mbox_loc_flat"))
+  {
+    assert(mFc7_mbox_loc_flatten_layer == nullptr);
+    mFc7_mbox_loc_flatten_layer = std::unique_ptr<Flatten>(new Flatten());
+    return mFc7_mbox_loc_flatten_layer.get();
+  }
+  else if (!strcmp(layerName, "fc7_mbox_conf_flat"))
+  {
+    assert(mFc7_mbox_conf_flatten_layer == nullptr);
+    mFc7_mbox_conf_flatten_layer = std::unique_ptr<Flatten>(new Flatten());
+    return mFc7_mbox_conf_flatten_layer.get();
+  }
+  else if (!strcmp(layerName, "conv6_2_mbox_loc_flat"))
+  {
+    assert(mConv6_2_mbox_loc_flatten_layer == nullptr);
+    mConv6_2_mbox_loc_flatten_layer = std::unique_ptr<Flatten>(new Flatten());
+    return mConv6_2_mbox_loc_flatten_layer.get();
+  }
+  else if (!strcmp(layerName, "conv6_2_mbox_conf_flat"))
+  {
+    assert(mConv6_2_mbox_conf_flatten_layer == nullptr);
+    mConv6_2_mbox_conf_flatten_layer = std::unique_ptr<Flatten>(new Flatten());
+    return mConv6_2_mbox_conf_flatten_layer.get();
+  }
+  else if (!strcmp(layerName, "conv7_2_mbox_loc_flat"))
+  {
+    assert(mConv7_2_mbox_loc_flatten_layer == nullptr);
+    mConv7_2_mbox_loc_flatten_layer = std::unique_ptr<Flatten>(new Flatten());
+    return mConv7_2_mbox_loc_flatten_layer.get();
+  }
+  else if (!strcmp(layerName, "conv7_2_mbox_conf_flat"))
+  {
+    assert(mConv7_2_mbox_conf_flatten_layer == nullptr);
+    mConv7_2_mbox_conf_flatten_layer = std::unique_ptr<Flatten>(new Flatten());
+    return mConv7_2_mbox_conf_flatten_layer.get();
+  }
+  else if (!strcmp(layerName, "conv8_2_mbox_loc_flat"))
+  {
+    assert(mConv8_2_mbox_loc_flatten_layer == nullptr);
+    mConv8_2_mbox_loc_flatten_layer = std::unique_ptr<Flatten>(new Flatten());
+    return mConv8_2_mbox_loc_flatten_layer.get();
+  }
+  else if (!strcmp(layerName, "conv8_2_mbox_conf_flat"))
+  {
+    assert(mConv8_2_mbox_conf_flatten_layer == nullptr);
+    mConv8_2_mbox_conf_flatten_layer = std::unique_ptr<Flatten>(new Flatten());
+    return mConv8_2_mbox_conf_flatten_layer.get();
+  }
+  else if (!strcmp(layerName, "conv9_2_mbox_loc_flat"))
+  {
+    assert(mConv9_2_mbox_loc_flatten_layer == nullptr);
+    mConv9_2_mbox_loc_flatten_layer = std::unique_ptr<Flatten>(new Flatten());
+    return mConv9_2_mbox_loc_flatten_layer.get();
+  }
+  else if (!strcmp(layerName, "conv9_2_mbox_conf_flat"))
+  {
+    assert(mConv9_2_mbox_conf_flatten_layer == nullptr);
+    mConv9_2_mbox_conf_flatten_layer = std::unique_ptr<Flatten>(new Flatten());
+    return mConv9_2_mbox_conf_flatten_layer.get();
+  }
+  
+  
+  
+  
+  
+  
+  
+  
 }
