@@ -9,9 +9,8 @@ import sys
 
 if __name__ == '__main__':
   if len(sys.argv) != 3:
-    print 'Usage: python jpg2ppm.py jpg_file_name ppm_file_name'
+    print 'Usage: python resize.py src_file_name dst_file_name'
     exit(1)
-  jpg_file_name = sys.argv[1]
-  ppm_file_name = sys.argv[2]
-  img = Image.open(jpg_file_name)
-  img.save(ppm_file_name)
+  pic = cv2.imread(sys.argv[1])
+  pic = cv2.resize(pic, (300, 300), interpolation=cv2.INTER_LINEAR)
+  cv2.imwrite(sys.argv[2], pic)
