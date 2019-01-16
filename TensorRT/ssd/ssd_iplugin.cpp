@@ -139,4 +139,84 @@ nvinfer1::IPlugin* createPlugin(const char* layerName, const nvinfer1::Weights* 
     mConv9_2_mbox_priorbox_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDPriorBoxPlugin(prior_box_param), nvPluginDeleter);
     return mConv9_2_mbox_priorbox_layer.get();
   }
+  //detection output layer
+  else if (!strcmp(layerName, "detection_out"))
+  {
+    assert(mDetection_out == nullptr);
+    mDetection_out = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDDetectionOutputPlugin(detection_output_param), nvPluginDeleter);
+    return mDetection_out.get();
+  }
+  //permute layers
+  else if (!strcmp(layerName, "conv4_3_norm_mbox_loc_perm"))
+  {
+    assert(mConv4_3_norm_mbox_loc_permute_layer == nullptr);
+    mConv4_3_norm_mbox_loc_permute_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDPermutePlugin(permute_param), nvPluginDeleter);
+    return mConv4_3_norm_mbox_loc_permute_layer.get();
+  }
+  else if (!strcmp(layerName, "conv4_3_norm_mbox_conf_perm"))
+  {
+    assert(mConv4_3_norm_mbox_conf_permute_layer == nullptr);
+    mConv4_3_norm_mbox_conf_permute_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDPermutePlugin(permute_param), nvPluginDeleter);
+    return mConv4_3_norm_mbox_conf_permute_layer.get();
+  }
+  else if (!strcmp(layerName, "fc7_mbox_loc_perm"))
+  {
+    assert(mFc7_mbox_loc_permute_layer == nullptr);
+    mFc7_mbox_loc_permute_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDPermutePlugin(permute_param), nvPluginDeleter);
+    return mFc7_mbox_loc_permute_layer.get();
+  }
+  else if (!strcmp(layerName, "fc7_mbox_conf_perm"))
+  {
+    assert(mFc7_mbox_conf_permute_layer == nullptr);
+    mFc7_mbox_conf_permute_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDPermutePlugin(permute_param), nvPluginDeleter);
+    return mFc7_mbox_conf_permute_layer.get();
+  }
+  else if (!strcmp(layerName, "conv6_2_mbox_loc_perm"))
+  {
+    assert(mConv6_2_mbox_loc_permute_layer == nullptr);
+    mConv6_2_mbox_loc_permute_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDPermutePlugin(permute_param), nvPluginDeleter);
+    return mConv6_2_mbox_loc_permute_layer.get();
+  }
+  else if (!strcmp(layerName, "conv6_2_mbox_conf_perm"))
+  {
+    assert(mConv6_2_mbox_conf_permute_layer == nullptr);
+    mConv6_2_mbox_conf_permute_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDPermutePlugin(permute_param), nvPluginDeleter);
+    return mConv6_2_mbox_conf_permute_layer.get();
+  }
+  else if (!strcmp(layerName, "conv7_2_mbox_loc_perm"))
+  {
+    assert(mConv7_2_mbox_loc_permute_layer == nullptr);
+    mConv7_2_mbox_loc_permute_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDPermutePlugin(permute_param), nvPluginDeleter);
+    return mConv7_2_mbox_loc_permute_layer.get();
+  }
+  else if (!strcmp(layerName, "conv7_2_mbox_conf_perm"))
+  {
+    assert(mConv7_2_mbox_conf_permute_layer == nullptr);
+    mConv7_2_mbox_conf_permute_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDPermutePlugin(permute_param), nvPluginDeleter);
+    return mConv7_2_mbox_conf_permute_layer.get();
+  }
+  else if (!strcmp(layerName, "conv8_2_mbox_loc_perm"))
+  {
+    assert(mConv8_2_mbox_loc_permute_layer == nullptr);
+    mConv8_2_mbox_loc_permute_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDPermutePlugin(permute_param), nvPluginDeleter);
+    return mConv8_2_mbox_loc_permute_layer.get();
+  }
+  else if (!strcmp(layerName, "conv8_2_mbox_conf_perm"))
+  {
+    assert(mConv8_2_mbox_conf_permute_layer == nullptr);
+    mConv8_2_mbox_conf_permute_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDPermutePlugin(permute_param), nvPluginDeleter);
+    return mConv8_2_mbox_conf_permute_layer.get();
+  }
+  else if (!strcmp(layerName, "conv9_2_mbox_loc_perm"))
+  {
+    assert(mConv9_2_mbox_loc_permute_layer == nullptr);
+    mConv9_2_mbox_loc_permute_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDPermutePlugin(permute_param), nvPluginDeleter);
+    return mConv9_2_mbox_loc_permute_layer.get();
+  }
+  else if (!strcmp(layerName, "conv9_2_mbox_conf_perm"))
+  {
+    assert(mConv9_2_mbox_conf_permute_layer == nullptr);
+    mConv9_2_mbox_conf_permute_layer = std::unique_ptr<INvPlugin, decltype(nvPluginDeleter)>(createSSDPermutePlugin(permute_param), nvPluginDeleter);
+    return mConv9_2_mbox_conf_permute_layer.get();
+  }
 }
