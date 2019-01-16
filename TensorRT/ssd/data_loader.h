@@ -43,7 +43,7 @@ public:
             int ww = img.cols;
             int hh = img.rows;
             int cc = img.channels();
-            float pixelMean[3]{ 102.9801f, 115.9465f, 122.7717f };
+            float pixelMean[3]{ 104.0f, 117.0f, 123.0f };
             for(int c=0; c<cc; c++)
             {
                 for(int h=0; h<hh; h++)
