@@ -586,8 +586,42 @@ IPlugin *PluginFactory::createPlugin(const char *layerName, const void *serialDa
   }
 }
 
+bool PluginFactory::isPlugin(const char *name)
+{
+  return (!strcmp(name, "conv4_3_norm") || !strcmp(name, "conv4_3_norm_mbox_priorbox") || !strcmp(name, "fc7_mbox_priorbox") || 
+         !strcmp(name, "conv6_2_mbox_priorbox") || !strcmp(name, "conv7_2_mbox_priorbox") || !strcmp(name, "conv8_2_mbox_priorbox") || 
+         !strcmp(name, "conv9_2_mbox_priorbox") || !strcmp(name, "detection_out") || !strcmp(name, "conv4_3_norm_mbox_loc_perm") || 
+         !strcmp(name, "conv4_3_norm_mbox_conf_perm") || !strcmp(name, "fc7_mbox_loc_perm") || !strcmp(name, "fc7_mbox_conf_perm") || 
+         !strcmp(name, "conv6_2_mbox_loc_perm") || !strcmp(name, "conv6_2_mbox_conf_perm") || !strcmp(name, "conv7_2_mbox_loc_perm") || 
+         !strcmp(name, "conv7_2_mbox_conf_perm") || !strcmp(name, "conv8_2_mbox_loc_perm") || !strcmp(name, "conv8_2_mbox_conf_perm") || 
+         !strcmp(name, "conv9_2_mbox_loc_perm") || !strcmp(name, "conv9_2_mbox_conf_perm") || !strcmp(name, "mbox_loc") || 
+         !strcmp(name, "mbox_conf") || !strcmp(name, "mbox_priorbox") || !strcmp(name, "mbox_conf_reshape") || 
+         !strcmp(name, "mbox_conf_softmax") || !strcmp(name, "conv4_3_norm_mbox_loc_flat") || !strcmp(name, "conv4_3_norm_mbox_conf_flat") || 
+         !strcmp(name, "fc7_mbox_loc_flat") || !strcmp(name, "fc7_mbox_conf_flat") || !strcmp(name, "conv6_2_mbox_loc_flat") || 
+         !strcmp(name, "conv6_2_mbox_conf_flat") || !strcmp(name, "conv7_2_mbox_loc_flat") || !strcmp(name, "conv7_2_mbox_conf_flat") || 
+         !strcmp(name, "conv8_2_mbox_loc_flat") || !strcmp(name, "conv8_2_mbox_conf_flat") || !strcmp(name, "conv9_2_mbox_loc_flat") || 
+         !strcmp(name, "conv9_2_mbox_conf_flat") || !strcmp(name, "mbox_conf_flatten"));
+}
 
-
+void PluginFactory::destroyPlugin()
+{
+  //normalize layer
+  mNormalizeLayer.release();
+  mNormalizeLayer = nullptr;
+  //priorbox layers
+  mConv4_3_norm_mbox_priorbox_layer.release();
+  mConv4_3_norm_mbox_priorbox_layer = nullptr;
+  mFc7_mbox_priorbox_layer.release();
+  mFc7_mbox_priorbox_layer = nullptr;
+  mConv6_2_mbox_priorbox_layer.release();
+  mConv6_2_mbox_priorbox_layer = nullptr;
+  mConv7_2_mbox_priorbox_layer.release();
+  mConv7_2_mbox_priorbox_layer = nullptr;
+  mConv8_2_mbox_priorbox_layer.release();
+  mConv8_2_mbox_priorbox_layer = nullptr;
+  mConv9_2_mbox_priorbox_layer.release();
+  mConv9_2_mbox_priorbox_layer = nullptr;
+}
 
 
 
