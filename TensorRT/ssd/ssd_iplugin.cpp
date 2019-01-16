@@ -621,9 +621,72 @@ void PluginFactory::destroyPlugin()
   mConv8_2_mbox_priorbox_layer = nullptr;
   mConv9_2_mbox_priorbox_layer.release();
   mConv9_2_mbox_priorbox_layer = nullptr;
+  //detection output layer
+  mDetection_out.release();
+  mDetection_out = nullptr;
+  //permute layers
+  mConv4_3_norm_mbox_loc_permute_layer.release();
+  mConv4_3_norm_mbox_loc_permute_layer = nullptr;
+  mConv4_3_norm_mbox_conf_permute_layer.release();
+  mConv4_3_norm_mbox_conf_permute_layer = nullptr;
+  mFc7_mbox_loc_permute_layer.release();
+  mFc7_mbox_loc_permute_layer = nullptr;
+  mFc7_mbox_conf_permute_layer.release();
+  mFc7_mbox_conf_permute_layer = nullptr;
+  mConv6_2_mbox_loc_permute_layer.release();
+  mConv6_2_mbox_loc_permute_layer = nullptr;
+  mConv6_2_mbox_conf_permute_layer.release();
+  mConv6_2_mbox_conf_permute_layer = nullptr;
+  mConv7_2_mbox_loc_permute_layer.release();
+  mConv7_2_mbox_loc_permute_layer = nullptr;
+  mConv7_2_mbox_conf_permute_layer.release();
+  mConv7_2_mbox_conf_permute_layer = nullptr;
+  mConv8_2_mbox_loc_permute_layer.release();
+  mConv8_2_mbox_loc_permute_layer = nullptr;
+  mConv8_2_mbox_conf_permute_layer.release();
+  mConv8_2_mbox_conf_permute_layer = nullptr;
+  mConv9_2_mbox_loc_permute_layer.release();
+  mConv9_2_mbox_loc_permute_layer = nullptr;
+  mConv9_2_mbox_conf_permute_layer.release();
+  mConv9_2_mbox_conf_permute_layer = nullptr;
+  //concat layers
+  mMbox_loc_concat_layer.release();
+  mMbox_loc_concat_layer = nullptr;
+  mMbox_conf_concat_layer.release();
+  mMbox_conf_concat_layer = nullptr;
+  mMbox_priorbox_concat_layer.release();
+  mMbox_priorbox_concat_layer = nullptr;
+  //reshape layer
+  mMbox_conf_reshape_layer.release();
+  mMbox_conf_reshape_layer = nullptr;
+  //flatten layers
+  mConv4_3_norm_mbox_loc_flatten_layer.release();
+  mConv4_3_norm_mbox_loc_flatten_layer = nullptr;
+  mConv4_3_norm_mbox_conf_flatten_layer.release();
+  mConv4_3_norm_mbox_conf_flatten_layer = nullptr;
+  mFc7_mbox_loc_flatten_layer.release();
+  mFc7_mbox_loc_flatten_layer = nullptr;
+  mFc7_mbox_conf_flatten_layer.release();
+  mFc7_mbox_conf_flatten_layer = nullptr;
+  mConv6_2_mbox_loc_flatten_layer.release();
+  mConv6_2_mbox_loc_flatten_layer = nullptr;
+  mConv6_2_mbox_conf_flatten_layer.release();
+  mConv6_2_mbox_conf_flatten_layer = nullptr;
+  mConv7_2_mbox_loc_flatten_layer.release();
+  mConv7_2_mbox_loc_flatten_layer = nullptr;
+  mConv7_2_mbox_conf_flatten_layer.release();
+  mConv7_2_mbox_conf_flatten_layer = nullptr;
+  mConv8_2_mbox_loc_flatten_layer.release();
+  mConv8_2_mbox_loc_flatten_layer = nullptr;
+  mConv8_2_mbox_conf_flatten_layer.release();
+  mConv8_2_mbox_conf_flatten_layer = nullptr;
+  mConv9_2_mbox_loc_flatten_layer.release();
+  mConv9_2_mbox_loc_flatten_layer = nullptr;
+  mConv9_2_mbox_conf_flatten_layer.release();
+  mConv9_2_mbox_conf_flatten_layer = nullptr;
+  mMbox_conf_flatten_layer.release();
+  mMbox_conf_flatten_layer = nullptr;
+  //softmax layer
+  mMbox_conf_softmax_layer.release();
+  mMbox_conf_softmax_layer = nullptr;
 }
-
-
-
-
-
