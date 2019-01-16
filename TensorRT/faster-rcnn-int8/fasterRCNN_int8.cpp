@@ -342,9 +342,9 @@ RES do_each_batch(unsigned int N, int beginIdx, IExecutionContext *context, cons
     }
     // pixel mean used by the Faster R-CNN's author
     float pixelMean[3]{ 102.9801f, 115.9465f, 122.7717f }; // also in BGR order
-    for (int i = 0, volImg = INPUT_C*INPUT_H*INPUT_W; i < N; ++i)
+    for (unsigned int i = 0, volImg = INPUT_C*INPUT_H*INPUT_W; i < N; ++i)
     {
-	for (int c = 0; c < INPUT_C; ++c)
+	for (unsigned int c = 0; c < INPUT_C; ++c)
 	{
 	    // the color image to input should be in BGR order
 	    for (unsigned j = 0, volChl = INPUT_H*INPUT_W; j < volChl; ++j)
