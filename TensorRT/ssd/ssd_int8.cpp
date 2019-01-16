@@ -181,3 +181,68 @@ float doInference(IExecutionContext& context, float* inputData, float* detection
     cudaStreamDestroy(stream);
     return ms;
 }
+
+bool cmp(const std::pair<std::string, float> a, const std::pair<std::string, float> b)
+{
+    return a.second > b.second;
+}
+
+RES do_each_batch(unsigned int N, int beginIdx, IExecutionContext *context, const std::vector<std::string> classList, 
+		 float *data, float *detectionOut, PPM *ppms, int* keepCount)
+{
+    memset(data, 0x0, N * INPUT_C * INPUT_H * INPUT_W * sizeof(float));
+    memset(detectionOut, 0x0, N * KEEP_TOPK * 7 * sizeof(float));
+    memset(ppms, 0x0, N * sizeof(PPM));
+    memset(keepCount, 0x0, N * sizeof(int));
+    PluginFactory pluginFactory;
+    RES res = {0};
+    std::vector<std::string> imageList;
+    std::vector<std::string> clazList;
+    for (unsigned int i = beginIdx; i < beginIdx + N; ++i)
+    {
+	imageList.push_back("/home/cd/TensorRT-4.0.1.6/data/ssd/ppms/" + std::to_string(i) + ".ppm");
+	clazList.push_back(classList[i]);
+    }
+    assert(imageList.size() == N);
+    assert(clazList.size() == N);
+    for (unsigned int i = 0; i < N; ++i)
+    	readPPMFile(imageList[i], ppms[i]);
+    // pixel mean used by the Faster R-CNN's author
+    float pixelMean[3]{ 104.0f, 117.0f, 123.0f }; // also in BGR order
+    for (unsigned int i = 0, volImg = INPUT_C*INPUT_H*INPUT_W; i < N; ++i)
+    {
+	for (unsigned int c = 0; c < INPUT_C; ++c)
+	{
+	    // the color image to input should be in BGR order
+	    for (unsigned j = 0, volChl = INPUT_H*INPUT_W; j < volChl; ++j)
+		data[i*volImg + c*volChl + j] = float(ppms[i].buffer[j*INPUT_C + 2 - c]) - pixelMean[c];
+	}
+    }
+    res.totalTime = doInference(*context, data, detectionOut, keepCount, N);
+    int t1_success = 0, t5_success = 0;
+    float class_max_prob = 0.0f;
+    for (unsigned int p = 0; p < N; ++p)
+    {
+	std::vector<std::pair<std::string, float>> vec;
+	for (int i = 1; i < keepCount[p]; ++i)
+	{
+	    class_max_prob = 0.0f;
+	    float *det = detectionOut + (p * KEEP_TOPK + i) * 7;
+	    assert((int)det[1] < OUTPUT_CLS_SIZE);
+	    class_max_prob = MAX(class_max_prob, det[2]);
+	    vec.push_back(make_pair(gCLASSES[(int)det[1]].c_str(), class_max_prob));
+	}
+	sort(vec.begin(), vec.end(), cmp);
+	if (vec[0].first == clazList[p])
+	    t1_success++;
+	if ((vec[0].first == clazList[p]) || (vec[1].first == clazList[p]) || (vec[2].first == clazList[p]) || 
+	    (vec[3].first == clazList[p]) || (vec[4].first == clazList[p]))
+	    t5_success++;
+	std::vector<std::pair<std::string, float>>().swap(vec);
+    }
+    res.top1_success = t1_success;
+    res.top5_success = t5_success;
+    std::vector<std::string>().swap(imageList);
+    std::vector<std::string>().swap(clazList);
+    return res;
+}
