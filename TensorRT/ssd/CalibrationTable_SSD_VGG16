@@ -1,0 +1,13 @@
+1
+conv9_2_mbox_loc_flat: 3c9c69b5
+conv9_2_mbox_loc_perm: 3c9c69b5
+conv7_2_mbox_conf: 3dad05e9
+conv9_2_mbox_conf_perm: 3d2b4912
+conv1_1: 4040cb02
+keep_count: 2
+conv4_3_norm_mbox_loc_perm: 3d61838c
+conv4_3_norm_mbox_conf_flat: 3dbbd4b2
+conv8_2_mbox_conf: 3db13bbb
+conv8_2: 3d2fa3a3
+conv1_2: 410ac26d
+conv4_3_norm_mbox_priorbox: 3a4fbc17
