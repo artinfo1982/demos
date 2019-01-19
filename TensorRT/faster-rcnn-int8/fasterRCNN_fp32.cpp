@@ -146,7 +146,6 @@ float doInference(IExecutionContext& context, float* inputData, float* inputImIn
         cudaStreamSynchronize(stream);
     }
     ms = (std::clock()-start) / (double) CLOCKS_PER_SEC /iter * 1000;
-    std::cout<< "infer total time elapse:  "<< ms << " ms" <<std::endl;
     CHECK(cudaMemcpyAsync(outputBboxPred, buffers[outputIndex0], batchSize * nmsMaxOut * OUTPUT_BBOX_SIZE * sizeof(float), 
 			  cudaMemcpyDeviceToHost, stream));
     CHECK(cudaMemcpyAsync(outputClsProb, buffers[outputIndex1], batchSize * nmsMaxOut * OUTPUT_CLS_SIZE * sizeof(float), 
