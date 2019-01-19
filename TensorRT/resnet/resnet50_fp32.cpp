@@ -175,7 +175,7 @@ int main(int argc, char* argv[])
     caffeToTRTModel("/home/cd/TensorRT-4.0.1.6/data/resnet/Resnet-50-deploy.prototxt", 
 		    "/home/cd/TensorRT-4.0.1.6/data/resnet/Resnet-50-model.caffemodel", 
 		    std::vector < std::string > { OUTPUT_BLOB_NAME }, 
-		    N, &modelStream, DataType::kINT8);
+		    N, &modelStream, DataType::kFLOAT);
     std::vector<std::string> classList;
     std::ifstream class_infile("/home/cd/TensorRT-4.0.1.6/data/resnet/ground-truth.txt");
     std::string tmp;
