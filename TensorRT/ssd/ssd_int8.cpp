@@ -171,7 +171,6 @@ float doInference(IExecutionContext& context, float* inputData, float* detection
         cudaStreamSynchronize(stream);
     }
     ms = (std::clock()-start) / (double) CLOCKS_PER_SEC /iter * 1000;
-    std::cout<< "infer total time elapse:  "<< ms << " ms" <<std::endl;
     CHECK(cudaMemcpyAsync(detectionOut, buffers[outputIndex0], batchSize * KEEP_TOPK * 7 * sizeof(float), cudaMemcpyDeviceToHost, stream));
     CHECK(cudaMemcpyAsync(keepCount, buffers[outputIndex1], batchSize * sizeof(int), cudaMemcpyDeviceToHost, stream));
     cudaStreamSynchronize(stream);
@@ -207,7 +206,6 @@ RES do_each_batch(unsigned int N, int beginIdx, IExecutionContext *context, cons
     assert(clazList.size() == N);
     for (unsigned int i = 0; i < N; ++i)
     	readPPMFile(imageList[i], ppms[i]);
-    // pixel mean used by the Faster R-CNN's author
     float pixelMean[3]{ 104.0f, 117.0f, 123.0f }; // also in BGR order
     for (unsigned int i = 0, volImg = INPUT_C*INPUT_H*INPUT_W; i < N; ++i)
     {
