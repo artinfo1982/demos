@@ -68,10 +68,7 @@ void caffeToTRTModel(const std::string& deployFile, const std::string& modelFile
 	network->markOutput(*blobNameToTensor->find(s.c_str()));
     builder->setMaxBatchSize(maxBatchSize);
     builder->setMaxWorkspaceSize(1 << 30);
-    builder->setInt8Mode(true);
-    DataLoader* dataLoader = new DataLoader(maxBatchSize, "/home/cd/TensorRT-4.0.1.6/data/resnet/list.txt", 224, 224, 3);
-    Int8EntropyCalibrator* calibrator = new Int8EntropyCalibrator(dataLoader, maxBatchSize, 224, 224, 3);
-    builder->setInt8Calibrator(calibrator);
+    builder->setInt8Mode(false);
     std::cout << "Begin to build engine..." << std::endl;
     ICudaEngine* engine = builder->buildCudaEngine(*network);
     assert(engine);
