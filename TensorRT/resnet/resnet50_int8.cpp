@@ -87,7 +87,7 @@ class Int8EntropyCalibrator : public IInt8EntropyCalibrator
   private:
     static std::string calibrationTableName()
     {
-        return std::string("CalibrationTable_SSD_VGG16");
+        return std::string("CalibrationTable_Resnet50");
     }
     bool mReadCache{ true };
     size_t mInputCount;
@@ -107,12 +107,11 @@ void readPPMFile(const std::string& filename, PPM& ppm)
 }
 
 void caffeToTRTModel(const std::string& deployFile, const std::string& modelFile, const std::vector<std::string>& outputs, 
-		     unsigned int maxBatchSize, nvcaffeparser1::IPluginFactory* pluginFactory, IHostMemory **modelStream, DataType dataType)
+		     unsigned int maxBatchSize, IHostMemory **modelStream, DataType dataType)
 {
     IBuilder* builder = createInferBuilder(gLogger);
     INetworkDefinition* network = builder->createNetwork();
     ICaffeParser* parser = createCaffeParser();
-    parser->setPluginFactory(pluginFactory);
     std::cout << "Begin to parse model" <<std::endl;
     const IBlobNameToTensor* blobNameToTensor = parser->parse(deployFile.c_str(), modelFile.c_str(), *network, 
 							      dataType == DataType::kINT8 ? DataType::kFLOAT : dataType);
@@ -122,8 +121,8 @@ void caffeToTRTModel(const std::string& deployFile, const std::string& modelFile
     builder->setMaxBatchSize(maxBatchSize);
     builder->setMaxWorkspaceSize(1 << 30);
     builder->setInt8Mode(true);
-    DataLoader* dataLoader = new DataLoader(maxBatchSize, "/home/cd/TensorRT-4.0.1.6/data/ssd/list.txt", 300, 300, 3);
-    Int8EntropyCalibrator* calibrator = new Int8EntropyCalibrator(dataLoader, maxBatchSize, 300, 300, 3);
+    DataLoader* dataLoader = new DataLoader(maxBatchSize, "/home/cd/TensorRT-4.0.1.6/data/resnet/list.txt", 224, 224, 3);
+    Int8EntropyCalibrator* calibrator = new Int8EntropyCalibrator(dataLoader, maxBatchSize, 224, 224, 3);
     builder->setInt8Calibrator(calibrator);
     std::cout << "Begin to build engine..." << std::endl;
     ICudaEngine* engine = builder->buildCudaEngine(*network);
@@ -137,18 +136,16 @@ void caffeToTRTModel(const std::string& deployFile, const std::string& modelFile
     shutdownProtobufLibrary();
 }
 
-float doInference(IExecutionContext& context, float* inputData, float* detectionOut, int* keepCount, int batchSize)
+float doInference(IExecutionContext& context, float* inputData, float* prob, int batchSize)
 {
     const ICudaEngine& engine = context.getEngine();
-    assert(engine.getNbBindings() == 3);
-    void* buffers[3];
+    assert(engine.getNbBindings() == 2);
+    void* buffers[2];
     float ms = 0.0f;
     int inputIndex = engine.getBindingIndex(INPUT_BLOB_NAME),
-	outputIndex0 = engine.getBindingIndex(OUTPUT_BLOB_NAME0),
-	outputIndex1 = engine.getBindingIndex(OUTPUT_BLOB_NAME1);
+	outputIndex = engine.getBindingIndex(OUTPUT_BLOB_NAME),
     CHECK(cudaMalloc(&buffers[inputIndex], batchSize * INPUT_C * INPUT_H * INPUT_W * sizeof(float)));   // data
-    CHECK(cudaMalloc(&buffers[outputIndex0], batchSize * KEEP_TOPK * 7 * sizeof(float)));                  // detection_out
-    CHECK(cudaMalloc(&buffers[outputIndex1], batchSize * sizeof(int))); // keepCount
+    CHECK(cudaMalloc(&buffers[outputIndex], batchSize * OUTPUT_CLS_SIZE * sizeof(float)));              // prob
     cudaStream_t stream;
     CHECK(cudaStreamCreate(&stream));
     CHECK(cudaMemcpyAsync(buffers[inputIndex], inputData, batchSize * INPUT_C * INPUT_H * INPUT_W * sizeof(float), 
@@ -162,13 +159,10 @@ float doInference(IExecutionContext& context, float* inputData, float* detection
         cudaStreamSynchronize(stream);
     }
     ms = (std::clock()-start) / (double) CLOCKS_PER_SEC /iter * 1000;
-    std::cout<< "infer total time elapse:  "<< ms << " ms" <<std::endl;
-    CHECK(cudaMemcpyAsync(detectionOut, buffers[outputIndex0], batchSize * KEEP_TOPK * 7 * sizeof(float), cudaMemcpyDeviceToHost, stream));
-    CHECK(cudaMemcpyAsync(keepCount, buffers[outputIndex1], batchSize * sizeof(int), cudaMemcpyDeviceToHost, stream));
+    CHECK(cudaMemcpyAsync(prob, buffers[outputIndex], batchSize * OUTPUT_CLS_SIZE * sizeof(float), cudaMemcpyDeviceToHost, stream));
     cudaStreamSynchronize(stream);
     CHECK(cudaFree(buffers[inputIndex]));
-    CHECK(cudaFree(buffers[outputIndex0]));
-    CHECK(cudaFree(buffers[outputIndex1]));
+    CHECK(cudaFree(buffers[outputIndex]));
     cudaStreamDestroy(stream);
     return ms;
 }
@@ -179,27 +173,24 @@ bool cmp(const std::pair<std::string, float> a, const std::pair<std::string, flo
 }
 
 RES do_each_batch(unsigned int N, int beginIdx, IExecutionContext *context, const std::vector<std::string> classList, 
-		 float *data, float *detectionOut, PPM *ppms, int* keepCount)
+		 float *data, float *prob, PPM *ppms)
 {
     memset(data, 0x0, N * INPUT_C * INPUT_H * INPUT_W * sizeof(float));
-    memset(detectionOut, 0x0, N * KEEP_TOPK * 7 * sizeof(float));
+    memset(prob, 0x0, N * OUTPUT_CLS_SIZE * sizeof(float));
     memset(ppms, 0x0, N * sizeof(PPM));
-    memset(keepCount, 0x0, N * sizeof(int));
-    PluginFactory pluginFactory;
     RES res = {0};
     std::vector<std::string> imageList;
     std::vector<std::string> clazList;
     for (unsigned int i = beginIdx; i < beginIdx + N; ++i)
     {
-	imageList.push_back("/home/cd/TensorRT-4.0.1.6/data/ssd/ppms/" + std::to_string(i) + ".ppm");
+	imageList.push_back("/home/cd/TensorRT-4.0.1.6/data/resnet/ppms/" + std::to_string(i) + ".ppm");
 	clazList.push_back(classList[i]);
     }
     assert(imageList.size() == N);
     assert(clazList.size() == N);
     for (unsigned int i = 0; i < N; ++i)
     	readPPMFile(imageList[i], ppms[i]);
-    // pixel mean used by the Faster R-CNN's author
-    float pixelMean[3]{ 104.0f, 117.0f, 123.0f }; // also in BGR order
+    float pixelMean[3]{ 102.852869f, 115.518302f, 121.358954f }; // also in BGR order
     for (unsigned int i = 0, volImg = INPUT_C*INPUT_H*INPUT_W; i < N; ++i)
     {
 	for (unsigned int c = 0; c < INPUT_C; ++c)
@@ -209,25 +200,18 @@ RES do_each_batch(unsigned int N, int beginIdx, IExecutionContext *context, cons
 		data[i*volImg + c*volChl + j] = float(ppms[i].buffer[j*INPUT_C + 2 - c]) - pixelMean[c];
 	}
     }
-    res.totalTime = doInference(*context, data, detectionOut, keepCount, N);
+    res.totalTime = doInference(*context, data, prob, N);
     int t1_success = 0, t5_success = 0;
-    float class_max_prob = 0.0f;
-    for (unsigned int p = 0; p < N; ++p)
+    for (unsigned int i = 0; i < N; ++i)
     {
 	std::vector<std::pair<std::string, float>> vec;
-	for (int i = 1; i < keepCount[p]; ++i)
-	{
-	    class_max_prob = 0.0f;
-	    float *det = detectionOut + (p * KEEP_TOPK + i) * 7;
-	    assert((int)det[1] < OUTPUT_CLS_SIZE);
-	    class_max_prob = MAX(class_max_prob, det[2]);
-	    vec.push_back(make_pair(gCLASSES[(int)det[1]].c_str(), class_max_prob));
-	}
+	for (int j = 0; j < OUTPUT_CLS_SIZE; ++j)
+	    vec.push_back(make_pair(std::to_string(j), prob[j + i * OUTPUT_CLS_SIZE]));
 	sort(vec.begin(), vec.end(), cmp);
-	if (vec[0].first == clazList[p])
+	if (vec[0].first == clazList[i])
 	    t1_success++;
-	if ((vec[0].first == clazList[p]) || (vec[1].first == clazList[p]) || (vec[2].first == clazList[p]) || 
-	    (vec[3].first == clazList[p]) || (vec[4].first == clazList[p]))
+	if ((vec[0].first == clazList[i]) || (vec[1].first == clazList[i]) || (vec[2].first == clazList[i]) || 
+	    (vec[3].first == clazList[i]) || (vec[4].first == clazList[i]))
 	    t5_success++;
 	std::vector<std::pair<std::string, float>>().swap(vec);
     }
@@ -240,17 +224,15 @@ RES do_each_batch(unsigned int N, int beginIdx, IExecutionContext *context, cons
 
 int main(int argc, char* argv[])
 {
-    PluginFactory pluginFactory;
     IHostMemory *modelStream{ nullptr };
     const int N = 10;
     const int total_number = 3000;
-    caffeToTRTModel("/home/cd/TensorRT-4.0.1.6/data/ssd/ssd_iplugin.prototxt", 
-		    "/home/cd/TensorRT-4.0.1.6/data/ssd/VGG_VOC0712_SSD_300x300_iter_120000.caffemodel", 
-		    std::vector < std::string > { OUTPUT_BLOB_NAME0, OUTPUT_BLOB_NAME1 }, 
-		    N, &pluginFactory, &modelStream, DataType::kINT8);
-    pluginFactory.destroyPlugin();
+    caffeToTRTModel("/home/cd/TensorRT-4.0.1.6/data/resnet/Resnet-50-deploy.prototxt", 
+		    "/home/cd/TensorRT-4.0.1.6/data/resnet/Resnet-50-model.caffemodel", 
+		    std::vector < std::string > { OUTPUT_BLOB_NAME }, 
+		    N, &modelStream, DataType::kINT8);
     std::vector<std::string> classList;
-    std::ifstream class_infile("/home/cd/TensorRT-4.0.1.6/data/ssd/classes.txt");
+    std::ifstream class_infile("/home/cd/TensorRT-4.0.1.6/data/resnet/ground-truth.txt");
     std::string tmp;
     while (class_infile >> tmp)
 	classList.push_back(tmp);
@@ -263,7 +245,7 @@ int main(int argc, char* argv[])
     ICudaEngine* engine = runtime->deserializeCudaEngine(modelStream->data(), modelStream->size(), &pluginFactory);
     IExecutionContext *context = engine->createExecutionContext();
     //save int8 tensorRT model
-    std::ofstream outfile("/home/cd/TensorRT-4.0.1.6/data/ssd/ssd-int8.trt", std::ios::out | std::ios::binary);
+    std::ofstream outfile("/home/cd/TensorRT-4.0.1.6/data/resnet/resnet50-int8.trt", std::ios::out | std::ios::binary);
     if (!outfile.is_open())
     {
 	std::cout << "fail to open trt model file" << std::endl;
@@ -273,14 +255,13 @@ int main(int argc, char* argv[])
     outfile.write((char*)p, modelStream->size());
     outfile.close();
     float* data = new float[N  *INPUT_C * INPUT_H * INPUT_W];
-    float* detectionOut = new float[N * KEEP_TOPK * 7];
+    float* prob = new float[N * OUTPUT_CLS_SIZE];
     PPM* ppms = new PPM[N];
-    int* keepCount = new int[N];
 	
     for (int i = 0; i < total_number/N; ++i)
     {
 	std::cout << "do batch " << i < " ..." << std::endl;
-	res = do_each_batch(N, i * N, context, classList, data, detectionOut, ppms, keepCount);
+	res = do_each_batch(N, i * N, context, classList, data, prob, ppms);
 	totalTime += res.totalTime;
 	top1_success += res.top1_success;
 	top5_success += res.top5_success;
