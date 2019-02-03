@@ -4,8 +4,7 @@ This code calculates the mAP(Mean Average Precision) of the object detection.
 In general, a higher mAP value indicates a better performance of the detection, given your ground-truth and set of classes.
 
 The performance of your detector will be judged using the mAP criterium defined in the [PASCAL VOC competition](http://host.robots.ox.ac.uk/pascal/VOC/). There are some differences with the mAP
-criterium after VOC2010. The details can be found in [VOCdevkit2007](http://host.robots.ox.ac.uk/pascal/VOC/voc2007/VOCdevkit_08-Jun-2007.tar) and [VOCdevkit2012]
-(http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCdevkit_18-May-2011.tar), which are writen in Matlab. We intepret these codes as python and support both criteriums.
+criterium after VOC2010. The details can be found in [VOCdevkit2007](http://host.robots.ox.ac.uk/pascal/VOC/voc2007/VOCdevkit_08-Jun-2007.tar) and [VOCdevkit2012](http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCdevkit_18-May-2011.tar), which are writen in Matlab. We intepret these codes as python and support both criteriums.
 
 ## Prerequisites
 - Python3 (We didn't adapt Python2 yet)
@@ -44,7 +43,7 @@ book 437 246 518 351 1
 pottedplant 272 190 316 259 0
 ```
 
-We proivid a tool that can convert the ground-truth file from PASCAL VOC Annotations, see the [tools](https://github.com/artinfo1982/demo).
+We proivid a tool that can convert the ground-truth file from PASCAL VOC Annotations, see the [tools](https://github.com/artinfo1982/demos/tree/master/ai/mAP/tools).
 
 ### Create the predicted objects files
 
