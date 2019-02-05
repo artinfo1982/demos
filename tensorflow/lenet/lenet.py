@@ -82,20 +82,25 @@ tf.reduce_mean(input_tensor, axis=None, keepdims=None, name=None, reduction_indi
 # 第一级：conv+relu+max_pool
 w1 = tf.Variable(tf.truncated_normal(shape=[5, 5, 1, 6], mean=0, stddev=0.1))
 b1 = tf.Variable(tf.constant(value=0.1, dtype=tf.float32, shape=[6]))
-conv1 = tf.nn.conv2d(input=x_image, filter=w1, strides=[1, 1, 1, 1], padding='SAME', use_cudnn_on_gpu=False, data_format='NHWC')
+conv1 = tf.nn.conv2d(input=x_image, filter=w1, strides=[
+                     1, 1, 1, 1], padding='SAME', use_cudnn_on_gpu=False, data_format='NHWC')
 relu1 = tf.nn.relu(conv1 + b1)
-pool1 = tf.nn.max_pool(relu1, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
+pool1 = tf.nn.max_pool(relu1, ksize=[1, 2, 2, 1], strides=[
+                       1, 2, 2, 1], padding='SAME')
 
 # 第二级：conv+relu+max_pool
 w2 = tf.Variable(tf.truncated_normal(shape=[5, 5, 6, 16], mean=0, stddev=0.1))
 b2 = tf.Variable(tf.constant(value=0.1, dtype=tf.float32, shape=[16]))
-conv2 = tf.nn.conv2d(input=pool1, filter=w2, strides=[1, 1, 1, 1], padding='SAME', use_cudnn_on_gpu=False, data_format='NHWC')
+conv2 = tf.nn.conv2d(input=pool1, filter=w2, strides=[
+                     1, 1, 1, 1], padding='SAME', use_cudnn_on_gpu=False, data_format='NHWC')
 relu2 = tf.nn.relu(conv2 + b2)
-pool2 = tf.nn.max_pool(relu2, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
+pool2 = tf.nn.max_pool(relu2, ksize=[1, 2, 2, 1], strides=[
+                       1, 2, 2, 1], padding='SAME')
 flat1 = tf.reshape(pool2, [-1, 7 * 7 * 16])
 
 # 第三级：3层全连接
-w3 = tf.Variable(tf.truncated_normal(shape=[7 * 7 * 16, 120], mean=0, stddev=0.1))
+w3 = tf.Variable(tf.truncated_normal(
+    shape=[7 * 7 * 16, 120], mean=0, stddev=0.1))
 b3 = tf.Variable(tf.constant(value=0.1, dtype=tf.float32, shape=[120]))
 fc1 = tf.nn.relu(tf.matmul(flat1, w3) + b3)
 
@@ -132,3 +137,80 @@ output (?, 10)
 '''
 
 # 定义交叉熵损失函数，J = -sum(yi * log(pi))，i为游标
+cross_entropy = -tf.reduce_sum(y * tf.log(output))
+'''
+Adam随机过程优化器，使损失函数最小化
+算法详见论文《Adam: A Method for Stochastic Optimization》，https://arxiv.org/abs/1412.6980
+Class AdamOptimizer
+__init__(
+    learning_rate=0.001,
+    beta1=0.9,
+    beta2=0.999,
+    epsilon=1e-8,
+    use_locking=False,
+    name='Adam'
+)
+minimize(
+    loss,
+    global_step=None,
+    var_list=None,
+    gate_gradients=GATE_OP,
+    aggregation_method=None,
+    colocate_gradients_with_ops=False,
+    name=None,
+    grad_loss=None
+)
+优化器有很多种，例如：
+tf.train.GradientDescentOptimizer
+tf.train.AdadeltaOptimizer
+tf.train.AdagradOptimizer
+tf.train.MomentumOptimizer
+tf.train.AdamOptimizer
+'''
+optimizer = tf.train.AdamOptimizer(
+    learning_rate=1e-3, beta1=0.9, beta2=0.999, epsilon=1e-8).minimize(cross_entropy)
+# optimizer = tf.train.GradientDescentOptimizer(learning_rate=1e-3).minimize(cross_entropy)
+# 通过argmax分别计算输出，label的概率最大的索引号
+# 再判断输出softmax向量最大值和label的是否相等，来判断预测是否准确，返回boll类型
+correct_prediction = tf.equal(tf.argmax(output, axis=1), tf.argmax(y, axis=1))
+# 求整个结果矩阵的平均值，结果矩阵中元素的值，不是1就是0，1表示识别成功
+accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+
+sess.run(tf.global_variables_initializer())
+
+print('train...')
+for i in range(niter):
+    batch_x, batch_y = mnist.train.next_batch(50)
+    _, loss_val = sess.run([optimizer, cross_entropy],
+                           feed_dict={x: batch_x, y: batch_y})
+    if i % interval == 0:
+        # eval()也是启动计算的一种方式。eval()只能用于tf.Tensor类对象，也就是有输出的Operation。
+        # 对于没有输出的Operation，可以用.run()或者Session.run()。Session.run()没有这个限制。
+        train_accuracy = accuracy.eval(feed_dict={x: batch_x, y: batch_y})
+        # 将accuracy和loss压入相应的数组
+        list_accuracy.append(train_accuracy)
+        list_loss.append(loss_val)
+        print('step %d, train_accuracy: %.2f, loss: %.2f' %
+              (i, train_accuracy, loss_val))
+
+# 保存权值为pb文件
+constant_graph = graph_util.convert_variables_to_constants(
+    sess=sess, input_graph_def=sess.graph_def, output_node_names=['output'])
+with tf.gfile.GFile("lenet.pb", mode='wb') as f:
+    f.write(constant_graph.SerializeToString())
+
+print('test...')
+print('accuracy: %.2f' %
+      (accuracy.eval(feed_dict={x: mnist.test.images, y: mnist.test.labels})))
+
+# 画图，可视化训练过程中的accuracy和loss
+_, ax1 = plt.subplots()
+ax2 = ax1.twinx()
+ax1.plot(interval * np.arange(len(list_loss)), list_loss,
+         color='b', label='loss', linestyle='-')
+ax2.plot(interval * np.arange(len(list_accuracy)), list_accuracy,
+         color='r', label='accuracy', linestyle='-')
+ax1.set_xlabel('iteration')
+ax1.set_ylabel('loss')
+ax2.set_ylabel('accuracy')
+plt.savefig('lenet.png')
