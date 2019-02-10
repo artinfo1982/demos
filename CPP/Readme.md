@@ -16,6 +16,14 @@ using SI = Week; // SI是Week的别名
 Si a;
 ```
 
+## decltype(c++11)
+```C++
+//希望从表达式的类型推断出要定义的变量的类型，但又不想用该表达式的值初始化变量。
+//decltype((var))的结果永远是引用，而decltype(var)结果只有当var本身就是一个引用时才是引用。
+decltype((var)) a = b;
+decltype(var) c;
+```
+
 ## 模板
 例如max函数，通常情况下可以这样定义：
 ```C++
