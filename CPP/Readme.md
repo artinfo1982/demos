@@ -1,5 +1,21 @@
 # C++的若干技巧
 
+## 常量表达式(c++11)
+觉得一个变量是常量表达式，就把它定义为constexpr，交给编译器判断。
+例如 constexpr int a = size();
+
+## typedef
+```C++
+typedef double wage; // wage是double的别名
+typedef char *p; // p是char*的别名
+```
+
+## using(c++11)
+```C++
+using SI = Week; // SI是Week的别名
+Si a;
+```
+
 ## 模板
 例如max函数，通常情况下可以这样定义：
 ```C++
