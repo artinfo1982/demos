@@ -1,4 +1,4 @@
-# C++的若干技巧
+# C++的若干经验技巧
 
 ## 常量表达式(c++11)
 觉得一个变量是常量表达式，就把它定义为constexpr，交给编译器判断。
@@ -22,6 +22,39 @@ Si a;
 //decltype((var))的结果永远是引用，而decltype(var)结果只有当var本身就是一个引用时才是引用。
 decltype((var)) a = b;
 decltype(var) c;
+```
+
+## string的一些注意点
+1. 加号拼接string，要注意不能连续两个字面值常量出现在开头
+```C++
+string a = "123" + "456"; // 非法
+string a = "123" + "456" + b; // 非法
+string a = "123" + "456" + b + "abc"; // 非法
+string a = "123" + b + "456" + "789"; // 合法
+string a = b + "123" + "456" + "789"; // 合法
+```
+
+## void*自增自减的移动单位
+void*自增或者自减，移动单位为内存的最小存储单元（字节）。   
+测试程序：
+```C++
+#include <iostream>
+using namespace std;
+
+int main()
+{
+    int a = 1;
+    void *p = &a;
+    cout << "before: " << p << endl;
+    p++;
+    cout << "after: " << p << endl;
+    return 0;
+}
+```
+输出结果
+```text
+before: 0x7ffd31536d4c
+after: 0x7ffd31536d4d
 ```
 
 ## 模板
