@@ -1,5 +1,7 @@
 # C++的若干经验技巧
 
+1. 尽量使用++i，不要用i++（除非必须要用），因为i++会将i的值先存起来。
+
 ## 常量表达式constexpr(c++11)
 觉得一个变量是常量表达式，就把它定义为constexpr，交给编译器判断。
 例如 constexpr int a = size();
@@ -113,11 +115,27 @@ sizeof(void*):  8
 ```
 
 ## string、const char*、char*、char[]之间的转换
-| name  | age | gender    | money  |
-|-------|:---:|-----------|-------:|
-| rhio  | 384 | robot     | $3,000 |
-| haroo | .3  | bird      | $430   |
-| jedi  | ?   | undefined | $0     |
+参考如下的帖子：   
+https://blog.csdn.net/rongrongyaofeiqi/article/details/52442169
+```text
+string-->const char*: string.c_str();
+string-->char*: 第一步，string.c_str(); 第二步，char*=<const_cast><char*>(const char*);
+string-->char[]: for (int i=0; i<string.length(); ++i) char[i]=string[i];
+const char*-->string: 直接转换
+char*-->string: 直接转换
+char[]-->string: 直接转换
+const char*-->char*: char*=<const_cast><char*>(const char*);
+const char*-->char[]: strncpy(char, const char*, n);
+char*-->char[]: strncpy(char, char*, n);
+```
+
+## 二维数组遍历
+```C++
+int a[2][2] = {{0,1},{2,3}};
+for (const auto &row : a) // 避免自动将数组转为指针
+    for (auto col : row)
+        cout << col << endl;
+```
 
 ## void*自增自减的移动单位
 void*自增或者自减，移动单位为内存的最小存储单元（字节）。   
