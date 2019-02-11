@@ -257,3 +257,24 @@ echo -e "\033[37m 白色字 \033[0m"
 ls | xargs -n 10 rm -r
 find . -name "*.caffemodel" | xargs -n 10 -I '{}' mv ../abc
 ```
+## 数组
+参考如下的帖子：   
+https://blog.csdn.net/Jerry_1126/article/details/52027539
+```shell
+# 声明数组
+declare -a arr
+# 数组初始化
+arr=(1 2 3 4 5)
+# 求数组长度
+size=${#arr[@]}
+size=${#arr[*]}
+# 遍历数组
+for ((i=0; i<${#arr[@]}; i++))
+do
+  echo ${arr[i]}
+done
+# 删除数组某个元素
+unset arr[2]
+# 删除数组
+unset arr
+```
