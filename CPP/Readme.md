@@ -1,23 +1,64 @@
 # C++的若干经验技巧
+1. 尽量使用++i，不要用i++（除非必须要用），因为i++会将i的值先存起来
+2. *p++; // 先取*p，再p++
+3. <<、>>的优先级大于<、>，而小于+、-、*、/
+4. 形参和实参。int func(int a); func(3); a是形参，3是实参
+5. 函数内的局部静态变量生命期为main函数销毁时，而非本函数结束
+6. 函数调用分传值、传引用。传指针也是传值的一种，因为指针里面存放着对象的地址。传值不会改变实参的值（通过指针修改的除外），是复制实参给形参。传指针也可以成为传址。尽量避免调用时拷贝对象，用传引用或者传址
+7. 不能将const实参传给非const形参，但非const实参可以传给const形参
+```C++
+// 代码段1
+void func1(const int &x) {}
+void func2(int &x) {}
+int a = 1;
+const int b = 2;
+func1(a); // 正确
+func1(b); // 正确
+func2(a); // 正确
+func2(b); // 错误，禁止const实参传给非const形参
 
-1. 尽量使用++i，不要用i++（除非必须要用），因为i++会将i的值先存起来。
+// 代码段2
+void func1(const string &x) {}
+void func2(string &x) {}
+func1("123"); // 正确
+func2("123"); // 错误，"123"是const类型，禁止const实参传给非const形参
+
+// 代码段3
+void func1(const int x)
+{
+    ++x; // 错误，const无论是引用还是非引用，都不能修改值
+}
+void func2(const int &x)
+{
+    ++x; // 错误，const无论是引用还是非引用，都不能修改值
+}
+```
+8. 不要返回函数局部变量的引用或指针，可以返回形参的引用。函数返回引用为左值，可以直接运算
+```C++
+int& func(int &x) {return x;}
+int main()
+{
+    int a = 1;
+    cout << ++func(a) << endl;
+    return 0;
+}
+```
+9. 函数重载（overload），指的是同名函数，但形参列表不同
+10. 指针函数（返回指针的函数），函数指针（指向函数的指针，例如 int (*pf)(const string &, const int&);）
 
 ## 常量表达式constexpr(c++11)
 觉得一个变量是常量表达式，就把它定义为constexpr，交给编译器判断。
 例如 constexpr int a = size();
-
 ## typedef
 ```C++
 typedef double wage; // wage是double的别名
 typedef char *p; // p是char*的别名
 ```
-
 ## using(c++11)
 ```C++
 using SI = Week; // SI是Week的别名
 Si a;
 ```
-
 ## decltype(c++11)
 ```C++
 //希望从表达式的类型推断出要定义的变量的类型，但又不想用该表达式的值初始化变量。
@@ -25,7 +66,6 @@ Si a;
 decltype((var)) a = b;
 decltype(var) c;
 ```
-
 ## 引用
 引用的目的在于描述函数的参数和返回值，特别是为了运算符的重载。   
 普通变量的引用：
@@ -61,7 +101,6 @@ const string &B(const string &s) {
 	return s;  
 }  
 ```
-
 ## string的一些注意点
 加号拼接string，要注意不能连续两个字面值常量出现在开头
 ```C++
@@ -71,7 +110,6 @@ string a = "123" + "456" + b + "abc"; // 非法
 string a = "123" + b + "456" + "789"; // 合法
 string a = b + "123" + "456" + "789"; // 合法
 ```
-
 ## vector
 ```C++
 vector<T> a;
@@ -86,14 +124,12 @@ for (auto it = a.begin(); it != a.end(); ++it)
 for (auto i : a)
     cout << i << endl;
 ```
-
 ## 指针数组、数组引用、数组指针
 ```C++
 int *p[10]; // []的优先级高于*，从右向左解读，首先p是一个数组，里面放着10个int型指针
 int *(&a)[10] = ptrs; // a是个数组的引用，该数组含有10个int型指针
 int (*p)[10]; // ()优先级大于[]，首先p是一个指针，指向一个数组，这个数组中含有10个int型整数
 ```
-
 ## 数组
 ```C++
 int a[] = {0,1,2,3,4};
@@ -102,7 +138,6 @@ for (auto it = begin(a); it != end(a); ++it)
     cout << *it << endl;
 cout << a[-2] << endl; // 注意，数组下标小于0都表示第一个元素，同a[0]
 ```
-
 ## 64位系统下的典型sizeof输出
 ```text
 sizeof(char):   1
@@ -113,7 +148,6 @@ sizeof(int*):   8
 sizeof(float*): 8
 sizeof(void*):  8
 ```
-
 ## string、const char*、char*、char[]之间的转换
 参考如下的帖子：   
 https://blog.csdn.net/rongrongyaofeiqi/article/details/52442169
@@ -128,7 +162,6 @@ const char*-->char*: char*=<const_cast><char*>(const char*);
 const char*-->char[]: strncpy(char, const char*, n);
 char*-->char[]: strncpy(char, char*, n);
 ```
-
 ## 二维数组遍历
 ```C++
 int a[2][2] = {{0,1},{2,3}};
@@ -136,7 +169,6 @@ for (const auto &row : a) // 避免自动将数组转为指针
     for (auto col : row)
         cout << col << endl;
 ```
-
 ## void*自增自减的移动单位
 void*自增或者自减，移动单位为内存的最小存储单元（字节）。   
 测试程序：
@@ -159,7 +191,74 @@ int main()
 before: 0x7ffd31536d4c
 after: 0x7ffd31536d4d
 ```
+## 显式转换
+static_cast<类型>(表达式)
+```text
+不安全，因为没有校验，只要没有const变量。
+一个重要的作用：还原void*的原始类型。
+例：
+void *p = &d; // d为double型
+double *dp = static_cast<double*>(p);
+```
+dynamic_cast<类型>(表达式)
+```text
+和static不一样的是，它在运行态转换，相对安全些。
+```
+const_cast<类型>(表达式)
+```text
+作用：去掉const。
+例：
+char *p1 = const_cast<char*>(p); // p为const char*类型
+```
+reinterpret_cast<类型>(表达式)
+```text
+尽量少用，采用位模式重新诠释。
+例：
+int *ip;
+char *pc = reinterpret_cast<char*>(ip); // 采用char*来表达int*，不安全
+```
+## try-catch
+```C++
+// C++安全编程规范要求尽量不用try-catch，需要程序员自己对程序的细节予以全面掌控
+try {
+    xxx
+} catch(exception e) {
+    cout << e.what() << endl;
+}
+```
+## 处理变长形参列表（使用c++11的initializer_list）
+```C++
+#include <iostream>
+#include <string>
+#include <initializer_list>
 
+using namespace std;
+
+void func(initializer_list<string> li)
+{
+    for (auto it=li.begin(); it!=li.end(); ++it)
+    {
+        if (*it == "-a")
+            cout << "param a value: " << *(++it) << endl;
+        else if (*it == "-b")
+            cout << "param b value: " << *(++it) << endl;
+        else if (*it == "-c")
+            cout << "param c value: " << *(++it) << endl;
+    }
+}
+
+int main()
+{
+    func({"-a", "1", "-b", "2", "-c", "3"});
+    return 0;
+}
+```
+输出
+```text
+param a value: 1
+param b value: 2
+param c value: 3
+```
 ## 模板
 例如max函数，通常情况下可以这样定义：
 ```C++
