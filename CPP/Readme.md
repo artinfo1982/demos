@@ -48,6 +48,14 @@ int main()
 ```
 9. 函数重载（overload），指的是同名函数，但形参列表不同
 10. 指针函数（返回指针的函数），函数指针（指向函数的指针，例如 int (*pf)(const string &, const int&);）
+11. this指向const对象
+12. const成员函数不能修改成员变量的值（除非是mutable类型）
+13. const类对象可以调const成员函数，但不可以调非const成员函数；非const类对象没有任何限制
+14. c++11允许用default来生成默认构造函数
+```C++
+public:
+    A() = default;
+```
 
 ## 常量表达式constexpr(c++11)
 觉得一个变量是常量表达式，就把它定义为constexpr，交给编译器判断。
@@ -261,6 +269,47 @@ int main()
 param a value: 1
 param b value: 2
 param c value: 3
+```
+## 友元函数和友元类
+```C++
+class A {
+    friend void b() {}; // 友元函数，类内位置不限
+    friend void B::func(); // 也可以设置某类的某个成员函数为友元
+    public:
+        void a() {}; // 成员函数
+};
+void c() {}; // 非成员函数
+class B {
+    friend class C; // C是B的友元类，C的所有成员函数都可以访问B的私有变量
+    void func() {};
+    ...
+};
+class C {
+    ...
+};
+```
+## 构造函数初始化列表
+```C++
+class A {
+public:
+    A(int a, int b):x(a), y(b) {}; // 构造函数初始化列表
+    ...
+private:
+    int x;
+    int y;
+};
+```
+## 委托构造函数（c++11）
+```C++
+class A {
+public:
+    A(int a, int b, int c):x(a), y(b), z(c) {}; // I
+    A(int a, int b):A(a, 0, 0) {}; // II
+    A(int a):A(a, 0) {}; // III
+    ...
+};
+// II 委托 I，III 委托 II
+// 被委托的构造函数应该包含较大数量的参数，初始化较多的成员变量
 ```
 ## 模板
 例如max函数，通常情况下可以这样定义：
