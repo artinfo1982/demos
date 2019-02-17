@@ -1,6 +1,6 @@
 /*
 * 演示各种常用容器的用法
-* string、vector、array、forward_list、list
+* string、vector、array、forward_list、list、queue、deque、stack、map、set
 */
 
 #include <iostream>
@@ -9,6 +9,12 @@
 #include <array>
 #include <forward_list>
 #include <list>
+#include <queue>
+#include <deque>
+#include <stack>
+#include <map>
+#include <set>
+#include <algorithm>
 #include <functional>
 
 class A
@@ -93,16 +99,9 @@ int main()
     std::cout << "vec1.max_size: " << vec1.max_size() << std::endl;
     std::vector<int> vec4;
     std::cout << "vec4 capacity: " << vec4.capacity() << std::endl; // capacity是指发生realloc前能允许的最大元素数，即预分配的内存
-    vec4.reserve(10);                                            // 通过reserve调整capacity
+    vec4.reserve(10);                                               // 通过reserve调整capacity
     std::cout << "vec4 capacity: " << vec4.capacity() << std::endl;
-    std::cout << "vec1[1]: " << vec1[1] << std::endl;
-    std::cout << "vec1.at(0): " << vec1.at(0) << std::endl;
-    std::cout << "vec1.front: " << vec1.front() << std::endl; // 返回首元素
-    std::cout << "vec1.back: " << vec1.back() << std::endl;   // 返回末元素
-    if (vec1.empty())
-        std::cout << "vec1 is empty" << std::endl;
-    else
-        std::cout << "vec1 is not empty" << std::endl;
+    // [n]、at(n)、front、back、empty用法同string，不再赘述
     std::cout << "-------------------------------------------------------" << std::endl;
 
     /*
@@ -113,16 +112,9 @@ int main()
     std::array<int, 3> arr1;
     arr1.fill(1); // 给array的所有元素都赋值为1
     std::array<std::string, 3> arr2 = {"111", "222", "333"};
-    if (arr2.empty())
-        std::cout << "arr2 is empty" << std::endl;
-    else
-        std::cout << "arr2 is not empty" << std::endl;
     std::cout << "arr2 size: " << arr2.size() << std::endl;
     std::cout << "arr2 max_size: " << arr2.max_size() << std::endl;
-    std::cout << "arr2[1]: " << arr2[1] << std::endl;
-    std::cout << "arr2.at(0): " << arr2.at(0) << std::endl;
-    std::cout << "arr2.front: " << arr2.front() << std::endl; // 返回首元素
-    std::cout << "arr2.back: " << arr2.back() << std::endl;   // 返回末元素
+    // [n]、at(n)、front、back、empty用法同string，不再赘述
     for (auto &a : arr2)
         std::cout << a << " ";
     std::cout << std::endl;
@@ -179,7 +171,7 @@ int main()
     li1.push_front("333"); // 最前端插入一个元素
     li1.push_front("111");
     li1.insert(++begin(li1), "222"); // 在某一位的前面插入一个元素
-    li1.push_back("444");             // 在末尾插入一个元素
+    li1.push_back("444");            // 在末尾插入一个元素
     for (auto &l : li1)
         std::cout << l << " ";
     std::cout << std::endl;
@@ -205,6 +197,155 @@ int main()
     std::cout << std::endl;
     // remove、remove_if、unique、sort、merge同forward_list，不再赘述
     std::cout << "-------------------------------------------------------" << std::endl;
+
+    /*
+    * queue ,单向队列，FIFO（先进先出），不允许遍历
+    */
+    std::queue<int> qu1;
+    qu1.push(1);
+    qu1.push(2);
+    qu1.push(3);
+    std::cout << "(1)qu1.front: " << qu1.front() << std::endl; // 获取第一个元素
+    std::cout << "(1)qu1.back: " << qu1.back() << std::endl;   // 获取最后一个元素
+    if (qu1.empty())
+        std::cout << "qu1 is empty" << std::endl;
+    std::cout << "qu1.size: " << qu1.size() << std::endl;
+    std::queue<A> qu2;
+    qu2.emplace("aaa");
+    qu2.emplace("bbb");
+    qu2.emplace("ccc");
+    qu1.pop();
+    std::cout << "(2)qu1.front: " << qu1.front() << std::endl; // 删除首元素后获取第一个元素
+    std::cout << "(2)qu1.back: " << qu1.back() << std::endl;   // 删除首元素后获取最后一个元素
+    std::cout << "-------------------------------------------------------" << std::endl;
+
+    /*
+    * deque ,双向队列，从一端进，必须从另一端出
+    */
+    std::deque<int> de1;
+    de1.push_front(1);           // 在开头插入元素
+    de1.push_back(3);            // 在末尾插入元素
+    de1.insert(++begin(de1), 2); // 在指定位置的前面插入元素
+    for (auto &d : de1)
+        std::cout << d << " ";
+    std::cout << std::endl;
+    // [n]、at(n)、front、back、empty、size、max_size用法同string，不再赘述
+    std::deque<A> de2;
+    de2.emplace_front("aaa");
+    de2.emplace_back("ccc");
+    de2.emplace(++begin(de2), "bbb");
+    for (auto &d : de2)
+        std::cout << d.get_name() << " ";
+    std::cout << std::endl;
+    std::deque<int> de3;
+    de3.push_front(1);
+    de3.push_back(2);
+    de3.push_back(3);
+    de3.push_back(4);
+    de3.push_back(5);
+    de3.pop_back();          // 删除最后一个元素
+    de3.pop_front();         // 删除第一个元素
+    de3.erase(++begin(de3)); // 删除第二个元素，也就是3，剩余2,4
+    for (auto &d : de3)
+        std::cout << d << " ";
+    std::cout << std::endl;
+    std::cout << "-------------------------------------------------------" << std::endl;
+
+    /*
+    * stack ,栈，先进后出，只能操作栈顶的元素，访问、压入或者删除栈顶元素，不支持遍历
+    */
+    std::stack<int> st1;
+    // empty、size用法同string，不再赘述
+    st1.push(1);
+    st1.push(2);
+    st1.push(3);
+    std::cout << "[1], top of st1 is: " << st1.top() << std::endl;
+    st1.pop();
+    std::cout << "[2], top of st1 is: " << st1.top() << std::endl;
+    std::stack<A> st2;
+    st2.emplace("aaa");
+    st2.emplace("bbb");
+    st2.emplace("ccc");
+    std::cout << "[1], top of st2 is: " << st2.top().get_name() << std::endl;
+    st2.pop();
+    std::cout << "[2], top of st2 is: " << st2.top().get_name() << std::endl;
+    std::cout << "-------------------------------------------------------" << std::endl;
+
+    /*
+    * map，key-value类型的存储容器，key不可重复
+    * map中的元素是自动按key升序排序，所以不能对map用sort函数
+    * 如果要按照value排序，请将pair放入vactor，再对vactor排序
+    */
+    std::map<int, std::string> ma1;
+    ma1.insert(std::map<int, std::string>::value_type(1, "aaa"));
+    ma1.insert(std::map<int, std::string>::value_type(2, "bbb"));
+    ma1.insert(std::map<int, std::string>::value_type(3, "ccc"));
+    for (auto &m : ma1)
+        std::cout << "ma1, key=" << m.first << ", value=" << m.second << std::endl;
+    // [n]、at(n)、empty、size、max_size用法同string，不再赘述
+    std::map<int, std::string> ma2 = {{1, "111"}, {2, "222"}, {3, "333"}};
+    ma2.erase(++begin(ma2));
+    for (auto &m : ma2)
+        std::cout << "ma2, key=" << m.first << ", value=" << m.second << std::endl;
+    std::map<int, A> ma3;
+    ma3.emplace(std::map<int, A>::value_type(1, "aaa"));
+    ma3.emplace(std::map<int, A>::value_type(2, "bbb"));
+    std::cout << "ma1 count key=2 is : " << ma1.count(1) << std::endl; // 统计包含1的元素的个数
+    if (ma1.find(2) != ma1.end())                                      // find返回查询到的key对应的元素的位置，如果没有找到，返回end()，注意只能使用key
+        std::cout << "ma1 found bbb" << std::endl;
+    else
+        std::cout << "ma1 not found bbb" << std::endl;
+    // equal_range(k)，返回左右两个位置指针，左边的是不大于k且最大的，右边的是大于k且最小的，仅对key有效
+    auto mt1 = ma1.equal_range(2);
+    std::cout << "equal_range, left-key=" << mt1.first->first << ", left-value=" << mt1.first->second << std::endl;
+    std::cout << "equal_range, right-key=" << mt1.second->first << ",right-value=" << mt1.second->second << std::endl;
+    auto mt_lower = ma1.lower_bound(2); // lower_bound(k)返回不大于k的最大的元素的位置指针，仅对key有效
+    if (mt_lower != ma1.end())
+        std::cout << "lower_bound, key=" << mt_lower->first << ", value=" << mt_lower->second << std::endl;
+    else
+        std::cout << "lower_bound, not found" << std::endl;
+    auto mt_upper = ma1.upper_bound(2); // upper_bound(k)返回大于k的最小的元素的位置指针，仅对key有效
+    if (mt_upper != ma1.end())
+        std::cout << "upper_bound, key=" << mt_upper->first << ", value=" << mt_upper->second << std::endl;
+    else
+        std::cout << "upper_bound, not found" << std::endl;
+    std::cout << "-------------------------------------------------------" << std::endl;
+
+    /*
+    * vactor+pair，实现key和value分别排序
+    */
+    std::vector<std::pair<int, float>> vec5;
+    vec5.push_back(std::make_pair(1, 3.56)); // vector中使用pair，需要调用make_pair
+    vec5.push_back(std::make_pair(3, 1.02));
+    vec5.push_back(std::make_pair(2, 2.98));
+    sort(vec5.begin(), vec5.end()); // sort定义在algorithm头文件中
+    std::cout << "sort by key:" << std::endl;
+    for (auto &v : vec5)
+        std::cout << "key=" << v.first << ", value=" << v.second << std::endl;
+    // 使用lamda表达式
+    sort(vec5.begin(), vec5.end(),
+         [](const std::pair<int, float> &x, const std::pair<int, float> &y) -> float {
+             return x.second < y.second;
+         });
+    std::cout << "sort by value:" << std::endl;
+    for (auto &v : vec5)
+        std::cout << "key=" << v.first << ", value=" << v.second << std::endl;
+    std::cout << "-------------------------------------------------------" << std::endl;
+
+    /*
+    * set，只有key存在，value就是key，key不可重复
+    * set自动对key剔重并排序
+    * 所有成员函数的用法，同map，不再赘述
+    */
+    std::set<int> se1;
+    se1.insert(1);
+    se1.insert(1);
+    se1.insert(2);
+    se1.insert(3);
+    std::cout << "se1 size: " << se1.size() << std::endl;
+    for (auto  &s : se1)
+        std::cout << s << " ";
+    std::cout << std::endl;
 
     return 0;
 }
