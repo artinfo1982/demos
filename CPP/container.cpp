@@ -14,6 +14,8 @@
 #include <stack>
 #include <map>
 #include <set>
+#include <unordered_map>
+#include <unordered_set>
 #include <algorithm>
 #include <functional>
 
@@ -343,9 +345,27 @@ int main()
     se1.insert(2);
     se1.insert(3);
     std::cout << "se1 size: " << se1.size() << std::endl;
-    for (auto  &s : se1)
+    for (auto &s : se1)
         std::cout << s << " ";
     std::cout << std::endl;
+
+    /*
+    * unordered_map、unordered_set
+    * 采用hash算法实现的无序map、set，使用方法和map、set没有太大区别，只是存储方式是按照hash算法实现的无序桶存储
+    */
+    std::unordered_map<int, std::string> umap;
+    umap.insert(std::make_pair(1, "aaa"));
+    umap.insert(std::make_pair(2, "bbb"));
+    umap.insert(std::make_pair(3, "ccc"));
+    for (auto &m : umap)
+        std::cout << "key=" << m.first << ", value=" << m.second << std::endl;
+
+    std::unordered_set<int> uset;
+    uset.insert(1);
+    uset.insert(2);
+    uset.insert(3);
+    for (auto &s : uset)
+        std::cout << s << std::endl;
 
     return 0;
 }
