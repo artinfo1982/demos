@@ -8,6 +8,21 @@
 #include <iomanip>
 #include <string.h>
 
+// 获取文件大小，返回字节数，如果文件不存在或者无法打开，则返回-1
+int get_file_size(const std::string &file_name)
+{
+    std::ifstream file(file_name, std::ios::in | std::ios::binary);
+    if (!file.is_open())
+    {
+        std::cout << "file can not open, file name: " << file_name << std::endl;
+        return -1;
+    }
+    file.seekg(0, std::ios::end);
+    int size = file.tellg();
+    file.close();
+    return size;
+}
+
 int read_file_ascii(const std::string &file_name, std::string &output)
 {
     std::ifstream file(file_name, std::ios::in);
@@ -127,6 +142,7 @@ int main()
     }
     else
         std::cout << "ERROR, read_file_binary" << std::endl;
+    std::cout << "file size is : " << get_file_size(infile2) << std::endl;
     for (int i=0; i<5; ++i)
     {
         if (write_file_ascii_append(outfile1, "aaa\n"))

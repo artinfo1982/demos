@@ -149,6 +149,22 @@ for (auto it = begin(a); it != end(a); ++it)
     cout << *it << endl;
 cout << a[-2] << endl; // 注意，数组下标小于0都表示第一个元素，同a[0]
 ```
+## 打印十六进制、打印精度
+```C++
+#include <iostream>
+#include <iomanip>
+
+int main()
+{
+    // 打印十六进制数，不足的左补0
+    std::cout << "0X" << std::setfill('0') << std::setw(2) << std::hex << 10 << std::endl;
+
+    // 设置输出精度为5个有效数字
+    std::cout << std::setprecision(5) << 3.1415926L << std::endl;
+
+    return 0;
+}
+```
 ## 64位系统下的典型sizeof输出
 ```text
 sizeof(char):   1
@@ -237,7 +253,43 @@ try {
     cout << e.what() << endl;
 }
 ```
-## 处理变长形参列表（使用c++11的initializer_list）
+## 随机
+```C++
+#include <iostream>
+#include <random>
+#include <ctime>
+
+int main()
+{
+    // 生成简单的，10个unsigned的随机整数
+    std::default_random_engine e(time(0));
+    for (int i = 0; i < 10; ++i)
+        std::cout << e() << " ";
+    std::cout << std::endl;
+
+    // 生成10个0-100均匀分布的整数
+    std::uniform_int_distribution<unsigned> u1(0, 100);
+    for (int i = 0; i < 10; ++i)
+        std::cout << u1(e) << " ";
+    std::cout << std::endl;
+
+    // 生成10个-10到10均匀分布的浮点数
+    std::uniform_real_distribution<double> u2(-10, 10);
+    for (int i = 0; i < 10; ++i)
+        std::cout << u2(e) << " ";
+    std::cout << std::endl;
+
+    // 生成10个均值0，方差1的正态分布的浮点数
+    std::normal_distribution<double> u3(0, 1.0);
+    for (int i = 0; i < 10; ++i)
+        std::cout << u3(e) << " ";
+    std::cout << std::endl;
+
+    return 0;
+}
+```
+## 处理变长形参列表（initializer_list、可变参数模板）
+使用c++11的initializer_list
 ```C++
 #include <iostream>
 #include <string>
@@ -269,6 +321,47 @@ int main()
 param a value: 1
 param b value: 2
 param c value: 3
+```
+使用c++11的可变参数模板
+```C++
+#include <iostream>
+#include <type_traits>
+
+// 递归终止函数
+void func() {}
+
+// 展开函数
+template <typename T, typename... Args>
+void func(T head, Args... args)
+{
+    if (std::is_same<T, int>::value)
+    {
+        std::cout << "int type" << std::endl;
+    }
+    else if (std::is_same<T, float>::value)
+    {
+        std::cout << "float type" << std::endl;
+    }
+    else if (std::is_same<T, std::string>::value)
+    {
+        std::cout << "string type" << std::endl;
+    }
+    else if (std::is_same<T, const char*>::value)
+    {
+        std::cout << "const char* type" << std::endl;
+    }
+    else
+    {
+        std::cout << "other type" << std::endl;
+    }
+    func(args...);
+}
+
+int main()
+{
+    func("-a", 1, "-b", 2.2f);
+    return 0;
+}
 ```
 ## 友元函数和友元类
 ```C++
