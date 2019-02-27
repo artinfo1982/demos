@@ -256,6 +256,7 @@ echo -e "\033[37m 白色字 \033[0m"
 ```shell
 ls | xargs -n 10 rm -r
 find . -name "*.caffemodel" | xargs -n 10 -I '{}' mv ../abc
+find . -type f -name "*.prototxt" | xargs -n 10 -I '{}' sed -i 's/aaa//g' {}
 ```
 ## 数组
 参考如下的帖子：   

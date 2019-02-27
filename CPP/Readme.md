@@ -56,6 +56,75 @@ int main()
 public:
     A() = default;
 ```
+15. 优先使用delete关键字删除函数而不是private却又不实现的函数
+```text
+不要使用：
+private:
+    func(xxx); // 没有实现
+应该使用：
+public:
+    func(xxx) = delete;
+```
+16. 使用override关键字声明覆盖的函数
+17. 优先使用声明别名（using）而不是typedef
+```C++
+#include <iostream>
+#include <vector>
+
+template <typename T>
+using MyVector = std::vector<std::pair<T, std::string>>;
+
+int main()
+{
+    MyVector<int> a;
+    return 0;
+}
+```
+18. 优先使用作用域限制的 enum class 而不是无作用域的 enum
+```C++
+#include <iostream>
+
+enum class Color
+{
+    red,
+    green,
+    blue
+};
+
+int main()
+{
+    auto c = Color::blue;
+    switch(c)
+    {
+    case Color::red:
+        std::cout << "red" << std::endl;
+        break;
+    case Color::green:
+        std::cout << "green" << std::endl;
+        break;
+    case Color::blue:
+        std::cout << "blue" << std::endl;
+        break;
+    default:
+        std::cout << "other" << std::endl;
+        break;
+    }
+    return 0;
+}
+```
+19. 优先使用const_iterator而不是iterator，优先使用cbegin、cend，cbegin和cend实现了const_iterator
+```C++
+#include <iostream>
+#include <vector>
+
+int main()
+{
+    std::vector<int> values;
+    auto it = std::find(values.cbegin(), values.cend(), 1983);
+    values.insert(it, 1998);
+    return 0;
+}
+```
 
 ## 常量表达式constexpr(c++11)
 觉得一个变量是常量表达式，就把它定义为constexpr，交给编译器判断。
