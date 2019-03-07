@@ -1,75 +1,185 @@
-# Faster R-CNN
+'''
+Faster R-CNN
+Faster R-CNN = RPN + Fast R-CNN（除去selective search外剩下的部分），bboxes通过rois换算来
+Faster R-CNN的输入：
+    data：经过缩放之后的ndarray格式的图片，float32类型
+    im_info：图片信息，np.array，（高，宽，缩放因子），float32类型
+Faster R-CNN的输出：
+    cls_prob：分类置信度（每个类别的概率），cls_prob的shape=(N, 21)，其中N为roi的数目
+    bbox_pred：边界框回归得到的边界框坐标修正值，取出来就是box_deltas
+'''
 
 import _init_paths
-from fast_rcnn.config import cfg
-from fast_rcnn.nms_wrapper import nms
-from utils.timer import Timer
 import matplotlib.pyplot as plt
+from nms.gpu_nms import gpu_nms
+from nms.cpu_nms import cpu_nms
 import numpy as np
 import scipy.io as sio
 import caffe
 import os
 import sys
 import cv2
-import argparse
+import time
 
 MODE = 'CPU'
 PIXEL_MEANS = np.array([[[102.9801, 115.9465, 122.7717]]])  # 论文中使用的像素均值
-TEST_SCALES = (600,)  # 测试用的尺度，尺度是每个图片的最短的边长
-TEST_MAX_SIZE = 1000 # 尺度化后，每个图片最长的边长
+TEST_SCALES = (600,)  # 测试用的尺度，尺度是每个图片的最短的边长，论文中使用的值
+TEST_MAX_SIZE = 1000  # 尺度化后，每个图片最长的边长，论文中使用的值
+CONF_THRESH = 0.8
+NMS_THRESH = 0.3
 
-CLASSES = ('__background__',
-           'aeroplane', 'bicycle', 'bird', 'boat',
-           'bottle', 'bus', 'car', 'cat', 'chair',
-           'cow', 'diningtable', 'dog', 'horse',
-           'motorbike', 'person', 'pottedplant',
-           'sheep', 'sofa', 'train', 'tvmonitor')
+
+CLASSES = ('__background__', 'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car', 'cat', 'chair', 'cow',
+           'diningtable', 'dog', 'horse', 'motorbike', 'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor')
+
+
+def im_list_to_blob(ims):
+    '''
+    把list中的ndarray格式的图片，转换为blob存储格式，要求图片都已经经过了预处理
+    '''
+    # 把所有图片的shape元组拼成一个矩阵(Nx3)，N表示图片的张数(batch)，取长宽数值最大的那一组shape，输出一维
+    max_shape = np.array([im.shape for im in ims]).max(axis=0)
+    num_images = len(ims)
+    # 预分配内存，shape=(N, max(heights), max(widths), 3)
+    # numpy.zeros(shape, dtype=float, order='C')
+    blob = np.zeros((num_images, max_shape[0], max_shape[1], 3),
+                    dtype=np.float32)
+    for i in range(num_images):
+        im = ims[i]  # i从0开始
+        blob[i, 0:im.shape[0], 0:im.shape[1], :] = im  # 因为边长按照最大值，对于不足最大值的，还是0
+    # 原始blob.shape=(N, max(heights), max(widths), 3)
+    # 转置blob，新的shape=(N, 3, max(heights), max(widths))
+    channel_swap = (0, 3, 1, 2)  # 重新定义axis顺序，原始4轴0, 1, 2, 3，新的轴0, 3, 1, 2
+    # numpy.transpose(a, axes=None)，张量转置，输入新的轴顺序
+    blob = blob.transpose(channel_swap)
+    return blob
 
 
 def _get_image_blob(im):
     """
-    将一张普通图片转为送入网络的格式
+    将一张普通图片按照多尺度缩放成若干图片（论文中偏向于单一尺度600）
     输入：
         im (ndarray)：BGR序的彩色图片
     输出：
-        blob (ndarray): 保存图片金字塔信息的二进制
-        im_scale_factors (list): 图片金字塔中使用的一组因子
+        blob (ndarray): 保存图片金字塔信息的二进制数据结构
+        im_scale_factors (list): 图片金字塔中使用的一组缩放因子
     """
     im_orig = im.astype(np.float32, copy=True)  # 复制出一个和原始图片一样的图片
     im_orig -= PIXEL_MEANS  # 减去像素均值
-
     im_shape = im_orig.shape  # shape一般是一个三元组，例如（300, 500, 3），3表示三通道
-    im_size_min = np.min(im_shape[0:2])  # shape三元组的最小值，一般是3
-    im_size_max = np.max(im_shape[0:2])
-
+    im_size_min = np.min(im_shape[0:2])  # shape三元组中图片长宽的最小值，[m:n]表示从m到n-1
+    im_size_max = np.max(im_shape[0:2])  # shape三元组中图片长宽的最大值，[m:n]表示从m到n-1
     processed_ims = []
     im_scale_factors = []
-
     for target_size in TEST_SCALES:
-        im_scale = float(target_size) / float(im_size_min)
-        # Prevent the biggest axis from being more than MAX_SIZE
-        if np.round(im_scale * im_size_max) > TEST_MAX_SIZE:
+        im_scale = float(target_size) / float(im_size_min)  # 计算缩放比例
+        if np.round(im_scale * im_size_max) > TEST_MAX_SIZE:  # np.round，四舍五入
+            # 重新调整缩放比例，确保按此比例放大，不会超过设定的最大值
             im_scale = float(TEST_MAX_SIZE) / float(im_size_max)
+        # 调用opencv，按照缩放比例，重新调整图片大小，线性插值
         im = cv2.resize(im_orig, None, None, fx=im_scale, fy=im_scale,
                         interpolation=cv2.INTER_LINEAR)
+        # 针对每一种TEST_SCALES元组里的元素计算出的缩放比例因子，存进list
         im_scale_factors.append(im_scale)
-        processed_ims.append(im)
-
-    # Create a blob to hold the input images
-    blob = im_list_to_blob(processed_ims)
-
-    return blob, np.array(im_scale_factors)
+        processed_ims.append(im)  # 处理过的图片，以ndarray的形式，存入list
+    blob = im_list_to_blob(processed_ims)  # 构造blob数据结构，存放这些处理好的图片
+    return blob, np.array(im_scale_factors)  # 返回blob和ndarray格式的缩放因子列表
 
 
 def _get_blobs(im, rois):
     '''
-    将图片和图片中的ROIs转为送入网络的格式
+    保存图片和其中的rois，如果使用rpn，则初始没有rois
     '''
     blobs = {'data': None, 'rois': None}  # 初始化一个字典
     blobs['data'], im_scale_factors = _get_image_blob(im)
-    if not cfg.TEST.HAS_RPN:
-        blobs['rois'] = _get_rois_blob(rois, im_scale_factors)
     return blobs, im_scale_factors
+
+
+def bbox_transform_inv(boxes, deltas):
+    '''
+    将boxes使用rpn网络产生的deltas进行坐标变换处理，求出变换后的boxes坐标，即预测的proposals。
+    此处boxes一般表示原始rois，即未经过任何处理仅仅是经过平移之后产生的rois。
+    输入：
+        boxes：原始rois，二维，shape=(N, 4)，N表示rois的数目
+        deltas：RPN网络产生的数据，二维，shape=(N, (1+classes)*4)，classes表示类别数目，1表示背景，N表示rois的数目
+    输出：
+        预测的变换之后的proposals（或者叫anchors）
+    '''
+    # boxes的shape=(N, 4)，其中4表示xmin、ymin、xmax、ymax，N为rois的数目
+    if boxes.shape[0] == 0:  # rois为空
+        # 返回一组0，换句话，不用调整任何box坐标
+        return np.zeros((0, deltas.shape[1]), dtype=deltas.dtype)
+    boxes = boxes.astype(deltas.dtype, copy=False)
+    # xmax - xmin + 1，之所以加1，是防止xmin == xmax，widths shape=(N, 4)
+    widths = boxes[:, 2] - boxes[:, 0] + 1.0
+    # ymax - ymin + 1，之所以加1，是防止ymin == ymax，heights shape=(N, 4)
+    heights = boxes[:, 3] - boxes[:, 1] + 1.0
+    ctr_x = boxes[:, 0] + 0.5 * widths  # 求得中心横坐标，xmin + w/2，ctr_x shape=(N, 4)
+    # 求得中心纵坐标，ymin + h/2，ctr_y shape=(N, 4)
+    ctr_y = boxes[:, 1] + 0.5 * heights
+    # 获取每一个类别的deltas的信息，每一个类别的deltas的信息是顺序存储的，
+    # 即第一个类别的四个信息（dx，dy，dw，dh）存储完成后才接着存另一个类别。
+    # 下面四个变量的shape均为(N, classes+1)，N表示roi数目，classes表示类别数目(此处为20)，1表示背景
+    # 双冒号的语法为：seq[start:end:step]，表示从start开始到end结束截取序列，步长为step。可以忽略end
+    '''
+    deltas shape=(N, (1+classes)*4)，存储结构示例：
+    dx dy dw dh  dx dy dw dh  dx dy dw dh ...
+    ---class 1---   ---class 2---   ---class 3---
+                        ... N行
+    deltas里面存放的都是缩放因子，也就是说dx，dy，dw，dh这些，都是缩放的系数
+    dx，dy，是单纯的比例系数，直接和宽高相乘，就可以算出中心坐标
+    dw，dh，是新的宽高相对于原来的宽高取对数log，因此，使用dw，dh时，需要使用exp
+    '''
+    dx = deltas[:, 0::4]  # 从第一个dx开始，间隔4抽取，得到所有的dx，dx shape=(N, 1+classes)
+    dy = deltas[:, 1::4]  # 从第一个dy开始，间隔4抽取，得到所有的dy，dy shape=(N, 1+classes)
+    dw = deltas[:, 2::4]  # 从第一个dw开始，间隔4抽取，得到所有的dw，dw shape=(N, 1+classes)
+    dh = deltas[:, 3::4]  # 从第一个dh开始，间隔4抽取，得到所有的dh，dh shape=(N, 1+classes)
+    '''
+    np.newaxis，增加一个轴，一般用于扩增array、向量、矩阵，便于广播加或者广播乘
+    a = np.array([[1, 2], [1, 2], [1, 2]]) # a的shape是(3, 2)
+    b = np.array([2, 2, 2]) # b的shape是(3,)，注意，(3,)表示这是个array，并不是一个向量，a*b会报错，无法广播乘，此时就需要扩展b为向量
+    array扩展为向量，有两种方案（行向量、列向量）
+    b = b[np.newaxis, :] # 变成行向量，shape=(1, 3)
+    b = b[:, np.newaxis] # 变成列向量，shape=(3, 1)
+    这样，a*b，就可以广播乘了，(3, 2) * (3, 1) = (3, 2)
+    a = [[a1, a2], [a3, a4], [a5, a6]]
+    b = [[b1], [b2], [b3]]
+    a */+ b = [[a1*/+b1, a2*/+b2], [a3*/+b1, a4*/+b2], [a5*/+b1, a6*/+b2]]
+    '''
+    # 原来的中心横坐标+宽度*缩放系数=新的中心横坐标
+    pred_ctr_x = dx * widths[:, np.newaxis] + ctr_x[:, np.newaxis]
+    # 原来的中心纵坐标+高度*缩放系数=新的中心纵坐标
+    pred_ctr_y = dy * heights[:, np.newaxis] + ctr_y[:, np.newaxis]
+    # dw本来就已经取了对数，要还原为原始的缩放系数，必须使用exp
+    pred_w = np.exp(dw) * widths[:, np.newaxis]
+    # dh本来就已经取了对数，要还原为原始的缩放系数，必须使用exp
+    pred_h = np.exp(dh) * heights[:, np.newaxis]
+    pred_boxes = np.zeros(deltas.shape, dtype=deltas.dtype)  # 预分配空间，存放最终的预测框
+    # pred_boxes的存储，类似deltas，不再赘述
+    # x1，新的xmin
+    pred_boxes[:, 0::4] = pred_ctr_x - 0.5 * pred_w
+    # y1，新的ymin
+    pred_boxes[:, 1::4] = pred_ctr_y - 0.5 * pred_h
+    # x2，新的xmax
+    pred_boxes[:, 2::4] = pred_ctr_x + 0.5 * pred_w
+    # y2，新的ymax
+    pred_boxes[:, 3::4] = pred_ctr_y + 0.5 * pred_h
+    return pred_boxes
+
+
+def clip_boxes(boxes, im_shape):
+    '''
+    如果预测框超出了原图的范围，调整预测框到原图内
+    '''
+    # x1 >= 0
+    boxes[:, 0::4] = np.maximum(np.minimum(boxes[:, 0::4], im_shape[1] - 1), 0)
+    # y1 >= 0
+    boxes[:, 1::4] = np.maximum(np.minimum(boxes[:, 1::4], im_shape[0] - 1), 0)
+    # x2 < im_shape[1]
+    boxes[:, 2::4] = np.maximum(np.minimum(boxes[:, 2::4], im_shape[1] - 1), 0)
+    # y2 < im_shape[0]
+    boxes[:, 3::4] = np.maximum(np.minimum(boxes[:, 3::4], im_shape[0] - 1), 0)
+    return boxes
 
 
 def im_detect(net, im, boxes=None):
@@ -199,8 +309,7 @@ def demo(net, image_name):
           '{:d} object proposals').format(timer.total_time, boxes.shape[0])
 
     # Visualize detections for each class
-    CONF_THRESH = 0.8
-    NMS_THRESH = 0.3
+
     for cls_ind, cls in enumerate(CLASSES[1:]):
         cls_ind += 1  # because we skipped background
         cls_boxes = boxes[:, 4*cls_ind:4*(cls_ind + 1)]

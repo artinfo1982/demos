@@ -125,6 +125,22 @@ int main()
     return 0;
 }
 ```
+20. C/C++里几种常见数据类型最大最小值的宏定义
+```C++
+#include <float.h>
+#include <limits.h>
+
+int n1 = INT_MIN;
+int n2 = INT_MAX;
+float f1 = FLT_MIN;
+float f2 = FLT_MAX;
+double d1 = DBL_MIN;
+double d2 = DBL_MAX;
+long ln1 = LONG_MIN;
+long ln2 = LONG_MAX;
+long long lln1 = LONG_LONG_MIN;
+long long lln2 = LONG_LONG_MAX;
+```
 
 ## 常量表达式constexpr(c++11)
 觉得一个变量是常量表达式，就把它定义为constexpr，交给编译器判断。
