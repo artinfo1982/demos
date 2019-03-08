@@ -1,4 +1,7 @@
+# -*- coding: utf-8 -*-
+
 '''
+本程序改编自rgb大神的py-faster-rcnn，仅保留推理部分，代码详细注解，仅支持CPU模式
 Faster R-CNN
 Faster R-CNN = RPN + Fast R-CNN（除去selective search外剩下的部分），bboxes通过rois换算来
 Faster R-CNN的输入：
@@ -9,10 +12,7 @@ Faster R-CNN的输出：
     bbox_pred：边界框回归得到的边界框坐标修正值，取出来就是box_deltas
 '''
 
-import _init_paths
 import matplotlib.pyplot as plt
-from nms.gpu_nms import gpu_nms
-from nms.cpu_nms import cpu_nms
 import numpy as np
 import scipy.io as sio
 import caffe
@@ -21,7 +21,6 @@ import sys
 import cv2
 import time
 
-MODE = 'CPU'
 PIXEL_MEANS = np.array([[[102.9801, 115.9465, 122.7717]]])  # 论文中使用的像素均值
 TEST_SCALES = (600,)  # 测试用的尺度，尺度是每个图片的最短的边长，论文中使用的值
 TEST_MAX_SIZE = 1000  # 尺度化后，每个图片最长的边长，论文中使用的值
@@ -58,9 +57,9 @@ def im_list_to_blob(ims):
 def _get_image_blob(im):
     """
     将一张普通图片按照多尺度缩放成若干图片（论文中偏向于单一尺度600）
-    输入：
+    入参：
         im (ndarray)：BGR序的彩色图片
-    输出：
+    返回：
         blob (ndarray): 保存图片金字塔信息的二进制数据结构
         im_scale_factors (list): 图片金字塔中使用的一组缩放因子
     """
@@ -99,10 +98,10 @@ def bbox_transform_inv(boxes, deltas):
     '''
     将boxes使用rpn网络产生的deltas进行坐标变换处理，求出变换后的boxes坐标，即预测的proposals。
     此处boxes一般表示原始rois，即未经过任何处理仅仅是经过平移之后产生的rois。
-    输入：
+    入参：
         boxes：原始rois，二维，shape=(N, 4)，N表示rois的数目
         deltas：RPN网络产生的数据，二维，shape=(N, (1+classes)*4)，classes表示类别数目，1表示背景，N表示rois的数目
-    输出：
+    返回：
         预测的变换之后的proposals（或者叫anchors）
     '''
     # boxes的shape=(N, 4)，其中4表示xmin、ymin、xmax、ymax，N为rois的数目
@@ -137,7 +136,8 @@ def bbox_transform_inv(boxes, deltas):
     '''
     np.newaxis，增加一个轴，一般用于扩增array、向量、矩阵，便于广播加或者广播乘
     a = np.array([[1, 2], [1, 2], [1, 2]]) # a的shape是(3, 2)
-    b = np.array([2, 2, 2]) # b的shape是(3,)，注意，(3,)表示这是个array，并不是一个向量，a*b会报错，无法广播乘，此时就需要扩展b为向量
+    # b的shape是(3,)，注意，(3,)表示这是个array，并不是一个向量，a*b会报错，无法广播乘，此时就需要扩展b为向量
+    b = np.array([2, 2, 2])
     array扩展为向量，有两种方案（行向量、列向量）
     b = b[np.newaxis, :] # 变成行向量，shape=(1, 3)
     b = b[:, np.newaxis] # 变成列向量，shape=(3, 1)
@@ -182,184 +182,181 @@ def clip_boxes(boxes, im_shape):
     return boxes
 
 
+def py_cpu_nms(dets, thresh):
+    '''
+    dets矩阵，是一个(Nx5)的二维矩阵，每一行分别表示为一个bbox对应的xmin，ymin，xmax，ymax，confidence(置信度)
+    例如：
+    dets = np.array([
+        [204, 102, 358, 250, 0.7], # bbox1
+        [257, 118, 380, 250, 0.2], # bbox2
+        [280, 135, 400, 250, 0.6], # bbox3
+        [255, 118, 360, 235, 0.4] # bbox4
+        ...
+    ])
+    '''
+    x1 = dets[:, 0]  # xmin，向量， 切第1列
+    y1 = dets[:, 1]  # ymin，向量， 切第2列
+    x2 = dets[:, 2]  # xmax，向量， 切第3列
+    y2 = dets[:, 3]  # ymax，向量， 切第4列
+    scores = dets[:, 4]  # confidence，向量，切第5列
+    areas = (x2 - x1 + 1) * (y2 - y1 + 1)  # 计算每个bbox的面积，得到一个向量
+    # numpy.argsort()，返回数组的下标索引，默认升序，如果np.argsort(-x)，表示降序排列x
+    order = scores.argsort(-scores)
+    keep = []  # 保存最终留下来的bbox
+    while order.size > 0:  # 非空
+        i = order[0]  # 取出当前order向量中第一个（置信度最大的那个）对应的下标索引
+        keep.append(i)  # 将该索引存入keep
+        '''
+        以下代码计算每两个bbox之间的交叠面积
+        ''''
+        # 拿当前置信度最大的那一行的xmin和xmin向量的其余所有元素依次求max，得到一个子向量，N-1个元素
+        xx1 = np.maximum(x1[i], x1[order[1:]])
+        # 拿当前置信度最大的那一行的ymin和ymin向量的其余所有元素依次求max，得到一个子向量，N-1个元素
+        yy1 = np.maximum(y1[i], y1[order[1:]])
+        # 拿当前置信度最大的那一行的xmax和xmax向量的其余所有元素依次求min，得到一个子向量，N-1个元素
+        xx2 = np.minimum(x2[i], x2[order[1:]])
+        # 拿当前置信度最大的那一行的ymax和ymax向量的其余所有元素依次求min，得到一个子向量，N-1个元素
+        yy2 = np.minimum(y2[i], y2[order[1:]])
+        # 交叠矩形的宽，向量，表示两两bbox，N-1个元素
+        w = np.maximum(0.0, xx2 - xx1 + 1)
+        # 交叠矩形的高，向量，表示两两bbox，N-1个元素
+        h = np.maximum(0.0, yy2 - yy1 + 1)
+        inter = w * h  # 交叠矩形的面积，向量，表示两两bbox，N-1个元素
+        # IOU计算公式=交叠面积/(并集面积-交叠面积)
+        iou = inter / (areas[i] + areas[order[1:]] - inter)
+        # np.where(condition)，输出满足condition条件的内容，保留IOU小于等于阈值的bbox，删除IOU大于阈值的部分
+        # np.where返回的是一个tuple，至少包含两个元素，例如(array([0, 1, 2], dtype=int64), ), 第一个元素是一个array，所以通过[0]获取
+        inds = np.where(iou <= thresh)[0]
+        order = order[inds + 1]  # 将order数组的第一个元素剔除出去
+    return keep
+
+
 def im_detect(net, im, boxes=None):
-    """Detect object classes in an image given object proposals.
-    Arguments:
-        net (caffe.Net): Fast R-CNN network to use
-        im (ndarray): color image to test (in BGR order)
-        boxes (ndarray): R x 4 array of object proposals or None (for RPN)
-    Returns:
-        scores (ndarray): R x K array of object class scores (K includes
-            background as object category 0)
-        boxes (ndarray): R x (4*K) array of predicted bounding boxes
-    """
-    blobs, im_scales = _get_blobs(im, boxes)
-
-    # When mapping from image ROIs to feature map ROIs, there's some aliasing
-    # (some distinct image ROIs get mapped to the same feature ROI).
-    # Here, we identify duplicate feature ROIs, so we only compute features
-    # on the unique subset.
-    if cfg.DEDUP_BOXES > 0 and not cfg.TEST.HAS_RPN:
-        v = np.array([1, 1e3, 1e6, 1e9, 1e12])
-        hashes = np.round(blobs['rois'] * cfg.DEDUP_BOXES).dot(v)
-        _, index, inv_index = np.unique(hashes, return_index=True,
-                                        return_inverse=True)
-        blobs['rois'] = blobs['rois'][index, :]
-        boxes = boxes[index, :]
-
-    if cfg.TEST.HAS_RPN:
-        im_blob = blobs['data']
-        blobs['im_info'] = np.array(
-            [[im_blob.shape[2], im_blob.shape[3], im_scales[0]]],
-            dtype=np.float32)
-
-    # reshape network inputs
+    '''
+    根据给定的候选，识别图中的物体
+    入参：
+        net(caffe.Net)：此处使用Fast R-CNN网络
+        im(ndarray)：BGR顺序的彩色图片
+        boxes(ndarray)：RPN使用的Rx4的区域候选框
+    返回：
+        scores(ndarray)：物体类别的分数，RxK(K表示物体种类数，包含背景0)
+        boxes(ndarray)：预测的边界框，Rx(4*K)
+    '''
+    blobs, im_scales = _get_blobs(im, boxes)  # 默认输入boxes为None
+    # blobs中，key=data的value赋值给im_blob
+    im_blob = blobs['data']
+    # 参见函数 im_list_to_blob，转置后的blob顺序为 (N, 3, max(heights), max(widths))
+    # im_blob.shape[2]和im_blob.shape[3]分别对应heights、width，
+    # 再加上缩放因子，组成一个新的array，作为value，存入key='im_info'的blobs
+    blobs['im_info'] = np.array(
+        [[im_blob.shape[2], im_blob.shape[3], im_scales[0]]], dtype=np.float32)
+    # python实现的caffe net，以有序字典blobs的形式保存了各层的信息
+    # *号作用域元组，表示取出元组里的所有元素，例如t=(1, 2, 3)，*t=[1, 2, 3]
+    # 把网络输入的data、im_info，调整为实际缩放后图片的大小
     net.blobs['data'].reshape(*(blobs['data'].shape))
-    if cfg.TEST.HAS_RPN:
-        net.blobs['im_info'].reshape(*(blobs['im_info'].shape))
-    else:
-        net.blobs['rois'].reshape(*(blobs['rois'].shape))
-
-    # do forward
+    net.blobs['im_info'].reshape(*(blobs['im_info'].shape))
+    # 执行前向传播，即推理
     forward_kwargs = {'data': blobs['data'].astype(np.float32, copy=False)}
-    if cfg.TEST.HAS_RPN:
-        forward_kwargs['im_info'] = blobs['im_info'].astype(
-            np.float32, copy=False)
-    else:
-        forward_kwargs['rois'] = blobs['rois'].astype(np.float32, copy=False)
+    forward_kwargs['im_info'] = blobs['im_info'].astype(np.float32, copy=False)
+    # 两个星号，表示依次取map的key=value格式
+    # 例如 forward_kwargs : {'data': xxx, 'im_info': xxx}
+    # 下面这句就是net.forward(data=xxx, im_info=xxx)
     blobs_out = net.forward(**forward_kwargs)
-
-    if cfg.TEST.HAS_RPN:
-        assert len(im_scales) == 1, "Only single-image batch implemented"
-        rois = net.blobs['rois'].data.copy()
-        # unscale back to raw image space
-        boxes = rois[:, 1:5] / im_scales[0]
-
-    if cfg.TEST.SVM:
-        # use the raw scores before softmax under the assumption they
-        # were trained as linear SVMs
-        scores = net.blobs['cls_score'].data
-    else:
-        # use softmax estimated probabilities
-        scores = blobs_out['cls_prob']
-
-    if cfg.TEST.BBOX_REG:
-        # Apply bounding-box regression deltas
-        box_deltas = blobs_out['bbox_pred']
-        pred_boxes = bbox_transform_inv(boxes, box_deltas)
-        pred_boxes = clip_boxes(pred_boxes, im.shape)
-    else:
-        # Simply repeat the boxes, once for each class
-        pred_boxes = np.tile(boxes, (1, scores.shape[1]))
-
-    if cfg.DEDUP_BOXES > 0 and not cfg.TEST.HAS_RPN:
-        # Map scores and predictions back to the original set of boxes
-        scores = scores[inv_index, :]
-        pred_boxes = pred_boxes[inv_index, :]
-
+    # 一个batch中只有一个图片，事实上确实是1，因为TEST_SCALES为一个元素的tuple
+    assert len(im_scales) == 1
+    rois = net.blobs['rois'].data.copy()  # 真正的rois数据从网络参数读入，随着给定的网络权值而定
+    # 将网络参数中的rois，按照和真实图片的缩放因子缩放
+    # rois的shape=(N, 4)，N是rois的数目，而boxes的shape同rois
+    boxes = rois[:, 1:5] / im_scales[0]
+    # 分类置信度（每个类别的概率），cls_prob的shape=(N, 21)，N是rois的数目
+    # 注意，scores是一个简单的数组，array，并不是numpy的ndarray格式
+    scores = blobs_out['cls_prob']
+    # 执行边界框修正，即根据预测框偏差（box_deltas），经过坐标变换，调整原bbox的4个坐标
+    box_deltas = blobs_out['bbox_pred']
+    # 使用rpn网络产生的deltas，修正预测框的位置
+    pred_boxes = bbox_transform_inv(boxes, box_deltas)
+    # 如果预测框超出了原图的范围，调整预测框到原图内
+    pred_boxes = clip_boxes(pred_boxes, im.shape)
     return scores, pred_boxes
 
 
-def vis_detections(im, class_name, dets, thresh=0.5):
-    """Draw detected bounding boxes."""
+def vis_detections(im, class_name, dets, ax, thresh=0.5):
+    '''
+    在一幅图中画出所有识别出的物体的边界框
+    '''
+    # dets[:, -1]，-1表示取右边倒数第一列，也就是confidence的那一列
+    # np.where返回的是一个tuple，至少包含两个元素，例如(array([0, 1, 2], dtype=int64), )，第一个元素是一个array，所以通过[0]获取
     inds = np.where(dets[:, -1] >= thresh)[0]
-    if len(inds) == 0:
+    if len(inds) == 0:  # 图中没有检测到任何物体
         return
-
-    im = im[:, :, (2, 1, 0)]
-    fig, ax = plt.subplots(figsize=(12, 12))
-    ax.imshow(im, aspect='equal')
     for i in inds:
-        bbox = dets[i, :4]
-        score = dets[i, -1]
+        bbox = dets[i, :4]  # 取dets的第i行，第1-4列，4个坐标
+        score = dets[i, -1]  # 取dets的第i行，第5列，confidence
+        # matplotlib的axes.add_patch，设置属性
+        # plt.Rectangle(xy, width, height, angle=0.0, **kwargs)
+        #   xy：矩形左上角的x、y坐标，是一个二元tuple，(x, y)
+        # bbox --- xmin、ymin、xmax、ymax
+        ax.add_patch(plt.Rectangle((bbox[0], bbox[1]), bbox[2] - bbox[0],
+                                   bbox[3] - bbox[1], fill=False, edgecolor='red', linewidth=1))
+        # 在图上添加文字，axes.text(x, y, s, fontdict=None, widthdash=False, **kwargs)
+        ax.text(bbox[0], bbox[1] - 2, '%s %.3f' % (class_name, score),
+                bbox=dict(facecolor='blue', alpha=0.5), fontsize=14, color='white')
+    # 设置图片的标题
+    ax.set_title(('%s detections with p(%s | box) >= %.1f') %
+                 (class_name, class_name, thresh), fontsize=14)
 
-        ax.add_patch(
-            plt.Rectangle((bbox[0], bbox[1]),
-                          bbox[2] - bbox[0],
-                          bbox[3] - bbox[1], fill=False,
-                          edgecolor='red', linewidth=3.5)
-        )
-        ax.text(bbox[0], bbox[1] - 2,
-                '{:s} {:.3f}'.format(class_name, score),
-                bbox=dict(facecolor='blue', alpha=0.5),
-                fontsize=14, color='white')
 
-    ax.set_title(('{} detections with '
-                  'p({} | box) >= {:.1f}').format(class_name, class_name,
-                                                  thresh),
-                 fontsize=14)
+def demo(net, image_name):
+    '''
+    使用训练好的权值，检测图片
+    '''
+    # 载入图片，opencv读入之后，自动转为numpy的ndarray格式
+    im = cv2.imread(image_name)
+    # 检测图片中所有的物体种类，并计时
+    begin_time = int(round(time.time() * 1000))  # 获取毫秒级当前时间，作为起始时间
+    scores, boxes = im_detect(net, im)
+    end_time = int(round(time.time() * 1000))  # 获取毫秒级当前时间，作为结束时间
+    print('Detection took %d ms for %d object proposals' % (end_time - begin_time, boxes.shape[0])
+    im=im[:, :, (2, 1, 0)]
+    fig, ax=plt.subplot(figsize=(12, 12))
+    ax.imshow(im, aspect='equal')
+    # 为每一个识别出来的物体画边界框
+    # python enumerate，返回元素的索引列表（从0开始）和元素本身的列表
+    for cls_ind, cls in enumerate(CLASSES[1:]):  # CLASSES从下标1开始，已经去掉背景0
+        cls_ind += 1  # 丢弃背景0
+        # 依次取出所有的边界框的坐标，N组，每组4个
+        # cls_boxes shape=(N, 4)
+        cls_boxes=boxes[:, 4*cls_ind:4*(cls_ind + 1)]
+        # 依次取出所有的得分，N组，每组1个，cls_scores shape=(N,)，因为scores本身只是个简单的array
+        cls_scores=scores[:, cls_ind]
+        # np.hstack是水平拼接所有的数组、矩阵，np.vstack是垂直拼接
+        # cls_scores[:, np.newaxis]之后，cls_scores shape=(N, 1)
+        # hstack之后，dets shape=(N, 5)
+        dets=np.hstack((cls_boxes,
+                          cls_scores[:, np.newaxis])).astype(np.float32)
+        keep=py_cpu_nms(dets, NMS_THRESH)
+        dets=dets[keep, :]  # 只保留nms之后留下的坐标+置信度元组
+        # 将所有检测到的物体画边界框在一张图中
+        vis_detections(im, cls, dets, ax, thresh=CONF_THRESH)
     plt.axis('off')
+    # 紧凑显示图像
     plt.tight_layout()
     plt.draw()
 
 
-def demo(net, image_name):
-    """Detect object classes in an image using pre-computed object proposals."""
-
-    # Load the demo image
-    im_file = os.path.join(cfg.DATA_DIR, 'demo', image_name)
-    im = cv2.imread(im_file)
-
-    # Detect all object classes and regress object bounds
-    timer = Timer()
-    timer.tic()
-    scores, boxes = im_detect(net, im)
-    timer.toc()
-    print('Detection took {:.3f}s for '
-          '{:d} object proposals').format(timer.total_time, boxes.shape[0])
-
-    # Visualize detections for each class
-
-    for cls_ind, cls in enumerate(CLASSES[1:]):
-        cls_ind += 1  # because we skipped background
-        cls_boxes = boxes[:, 4*cls_ind:4*(cls_ind + 1)]
-        cls_scores = scores[:, cls_ind]
-        dets = np.hstack((cls_boxes,
-                          cls_scores[:, np.newaxis])).astype(np.float32)
-        keep = nms(dets, NMS_THRESH)
-        dets = dets[keep, :]
-        vis_detections(im, cls, dets, thresh=CONF_THRESH)
-
-
-def parse_args():
-    """Parse input arguments."""
-    parser = argparse.ArgumentParser(description='Faster R-CNN demo')
-    parser.add_argument('--gpu', dest='gpu_id', help='GPU device id to use [0]',
-                        default=0, type=int)
-    parser.add_argument('--cpu', dest='cpu_mode',
-                        help='Use CPU mode (overrides --gpu)',
-                        action='store_true')
-    parser.add_argument('--net', dest='demo_net', help='Network to use [vgg16]',
-                        choices=NETS.keys(), default='vgg16')
-    args = parser.parse_args()
-    return args
-
-
 if __name__ == '__main__':
-    cfg.TEST.HAS_RPN = True  # Use RPN for proposals
-
-    args = parse_args()
-
-    prototxt = "/home/cd/py-faster-rcnn/models/pascal_voc/faster_rcnn_alt_opt/faster_rcnn_test.pt"
-    caffemodel = "/home/cd/py-faster-rcnn/data/faster_rcnn_models/VGG16/VGG16_faster_rcnn_final.caffemodel"
+    prototxt="/home/cd/py-faster-rcnn/models/pascal_voc/VGG16/faster_rcnn_alt_opt/faster_rcnn_test.pt"
+    caffemodel="/home/cd/py-faster-rcnn/data/faster_rcnn_models/VGG16/VGG16_faster_rcnn_final.caffemodel"
     if not os.path.isfile(caffemodel):
-        raise IOError(('{:s} not found.\n').format(caffemodel))
+        raise IOError('%s not found.\n' % caffemodel)
 
-    if MODE == 'GPU':
-        caffe.set_mode_gpu()
-    else:
-        caffe.set_mode_cpu()
-    net = caffe.Net(prototxt, caffemodel, caffe.TEST)
+    caffe.set_mode_cpu()
+    net=caffe.Net(prototxt, caffemodel, caffe.TEST)
 
-    # Warmup on a dummy image
-    im = 128 * np.ones((300, 500, 3), dtype=np.uint8)
-    for i in xrange(2):
-        _, _ = im_detect(net, im)
-
-    im_names = ['000456.jpg', '000542.jpg', '001150.jpg',
+    im_names=['000456.jpg', '000542.jpg', '001150.jpg',
                 '001763.jpg', '004545.jpg']
     for im_name in im_names:
-        print 'Demo for data/demo/{}'.format(im_name)
+        print('Demo for data/demo/%s' % im_name)
         demo(net, im_name)
 
     plt.show()
