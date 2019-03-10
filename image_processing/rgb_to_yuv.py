@@ -4,9 +4,11 @@
 将RGB图片(例如JPG)转变为各种YUV
 
 YUV采样：
+    4:0:0，只有Y分量，没有UV分量
     4:4:4，每1个Y对应一组UV分量
     4:2:2，每2个Y共用一组UV分量
     4:2:0，每4个Y共用一组UV分量
+    4:1:1，
     
 YUV存储：
     planar：简称p，存完所有Y，然后所有U，然后所有V。例如yuv420 planar = yuv420p
@@ -193,7 +195,7 @@ def rgb_to_yuv422_VYUY(rgb_file, yuv_file):
         f.write(yuv_)
 
 
-def rgb_to_yuv420p(rgb_file, yuv_file):
+def rgb_to_yuv420p_I420(rgb_file, yuv_file):
     '''
     Y全量保留，U、V在原来的基础上每4位采样一次
     内存排布：Y0 Y1 Y2 ...U0 U1 U2 ...V0 V1 V2 ...
@@ -210,7 +212,24 @@ def rgb_to_yuv420p(rgb_file, yuv_file):
         f.write(V)
 
 
-def rgb_to_yuv420sp(rgb_file, yuv_file):
+def rgb_to_yuv420p_YV12(rgb_file, yuv_file):
+    '''
+    Y全量保留，U、V在原来的基础上每4位采样一次
+    内存排布：Y0 Y1 Y2 ...V0 V1 V2 ...U0 U1 U2 ...
+    '''
+    yuv = rgb2yuv(rgb_file)
+    Y = np.array(yuv[:, :, 0], dtype=np.uint8).flatten()
+    U = np.array(yuv[:, :, 1], dtype=np.uint8).flatten()
+    V = np.array(yuv[:, :, 2], dtype=np.uint8).flatten()
+    U = np.array(U[0::4], dtype=np.uint8).flatten()
+    V = np.array(V[0::4], dtype=np.uint8).flatten()
+    with open(yuv_file, 'wb') as f:
+        f.write(Y)
+        f.write(V)
+        f.write(U)
+
+
+def rgb_to_yuv420sp_NV12(rgb_file, yuv_file):
     '''
     Y全量保留，U、V在原来的基础上每4位采样一次
     先存放所有的Y，然后U、V交错存储
@@ -228,9 +247,19 @@ def rgb_to_yuv420sp(rgb_file, yuv_file):
         f.write(UV)
 
 
-def main():
-    rgb_to_yuv420p('d:\\a.jpg', 'd:\\420p.yuv')
-
-
-if __name__ == '__main__':
-    main()
+def rgb_to_yuv420sp_NV21(rgb_file, yuv_file):
+    '''
+    Y全量保留，U、V在原来的基础上每4位采样一次
+    先存放所有的Y，然后U、V交错存储
+    内存排布：Y0 Y1 Y2 ...V0 U0 V1 U1 ...
+    '''
+    yuv = rgb2yuv(rgb_file)
+    Y = np.array(yuv[:, :, 0], dtype=np.uint8).flatten()
+    U = np.array(yuv[:, :, 1], dtype=np.uint8).flatten()
+    V = np.array(yuv[:, :, 2], dtype=np.uint8).flatten()
+    U = np.array(U[0::4], dtype=np.uint8).flatten()
+    V = np.array(V[0::4], dtype=np.uint8).flatten()
+    VU = np.c_[V, U].flatten()
+    with open(yuv_file, 'wb') as f:
+        f.write(Y)
+        f.write(VU)
