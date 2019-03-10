@@ -1,9 +1,9 @@
 import numpy as np
 
 
-def yuv_420_padding(ori_file, ori_h, ori_w, new_file, new_h, new_w):
+def yuv_420sp_padding(ori_file, ori_h, ori_w, new_file, new_h, new_w):
     '''
-    对一个yuv420文件进行height或者width的padding，用0填补
+    对一个yuv420sp文件进行height或者width的padding，用0填补
     输入：
         ori_file：原始的yuv文件
         ori_h：原始yuv的height
@@ -35,14 +35,18 @@ def yuv_420_padding(ori_file, ori_h, ori_w, new_file, new_h, new_w):
     U = np.pad(U, ((0, diff_h), (0, diff_w//2)), 'constant', constant_values=0)
     V = np.pad(V, ((0, diff_h), (0, diff_w//2)), 'constant', constant_values=0)
 
+    Y = Y.flatten()
+    U = U.flatten()
+    V = V.flatten()
+    UV = np.c_[U, V].flatten()
+
     try:
         with open(new_file, 'wb') as f:
             f.write(Y)
-            f.write(U)
-            f.write(V)
+            f.write(UV)
     except IOError as e:
         print(str(e))
 
 
 if __name__ == '__main__':
-    yuv_420_padding('d:\\a.yuv', 12, 12, 'd:\\b.yuv', 12, 16)
+    yuv_420sp_padding('d:\\a.yuv', 12, 12, 'd:\\b.yuv', 12, 16)
