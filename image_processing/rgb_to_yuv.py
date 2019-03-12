@@ -10,13 +10,13 @@ Y(明亮度，Luminance)、U(色度，Chrominance)、V(浓度，Chroma)。
 YUV和RGB的关系：
 通过矩阵和向量的乘积得到，由此可见，原始YUV和RGB具有相同的维度和大小。
 ----------------------------------------------
-Y       0.299           0.587           0.114           R
-U = -0.14713    -0.28886        0.436           G
-V       0.615        -0.51499     -0.10001        B
+Y     0.299       0.587      0.114           R
+U = -0.14713    -0.28886     0.436           G
+V     0.615     -0.51499    -0.10001         B
 ----------------------------------------------
-R      1           0           1.13983           Y
+R    1       0         1.13983          Y
 G =  1    -0.39465    -0.58060          U
-B      1      2.03211          0                 V
+B    1    2.03211         0             V
 ----------------------------------------------
 
 假设一张像素点为(M*N)的RGB图像，每个像素点有R、G、B三个分量。
@@ -37,9 +37,9 @@ YUV采样：
         X       O       X       O
 对于4:2:0
         X       O      X      O
-        O      O      O      O
+        O       O      O      O
         X       O      X      O
-        O      O      O      O
+        O       O      O      O
 对于4:1:1
         X       O       O       O
         X       O       O       O
@@ -90,10 +90,10 @@ def rgb_to_yuv400(rgb_file, yuv_file, dtype=np.uint8):
     '''
     只有Y分量
         +--------------+
-        |Y0Y1Y2...         |
-        |...                      | h
+        |Y0Y1Y2...     |
+        |...           | h
         +--------------+
-                   w
+               w
     内存排布：Y0 Y1 Y2 ...
     '''
     yuv = rgb2yuv(rgb_file)
@@ -105,14 +105,14 @@ def rgb_to_yuv400(rgb_file, yuv_file, dtype=np.uint8):
 def rgb_to_yuv444p(rgb_file, yuv_file, dtype=np.uint8):
     '''
         +--------------+
-        |Y0Y1Y2...         |
-        |...                      |
-        |U0U1U2...        |
-        |...                      | h
-        |V0V1V2...        |
-        |...                      |
+        |Y0Y1Y2...     |
+        |...           |
+        |U0U1U2...     |
+        |...           | h
+        |V0V1V2...     |
+        |...           |
         +--------------+
-                   w
+               w
     内存排布：Y0 Y1 Y2 ...U0 U1 U2 ...V0 V1 V2 ...
     '''
     yuv = np.array(rgb2yuv(rgb_file), dtype=dtype)
@@ -128,10 +128,10 @@ def rgb_to_yuv444p(rgb_file, yuv_file, dtype=np.uint8):
 def rgb_to_yuv444(rgb_file, yuv_file, dtype=np.uint8):
     '''
         +-----------------------+
-        |Y0U0V0Y1U1V1...         |
-        |...                                     | h
+        |Y0U0V0Y1U1V1...        |
+        |...                    | h
         +-----------------------+
-                        w
+                  w
     内存排布：Y0 U0 V0 ...Y1 U1 V1 ...Y2 U2 V2 ...
     '''
     yuv = rgb2yuv(rgb_file)
@@ -145,18 +145,18 @@ def rgb_to_yuv444(rgb_file, yuv_file, dtype=np.uint8):
 
 def rgb_to_yuv422p(rgb_file, yuv_file, dtype=np.uint8):
     '''
-                              w
+                      w
             +--------------------+
-            |Y0Y1Y2Y3...               |
-            |...                                |   h
+            |Y0Y1Y2Y3...         |
+            |...                 | h
             +--------------------+
-            |U0U1...      |
-            |...                | h
+            |U0U1...   |
+            |...       | h
             +----------+
-            |V0V1...       |
-            |...                | h
+            |V0V1...   |
+            |...       | h
             +----------+
-                   w/2
+                w/2
     内存排布：Y0 Y1 Y2 ...U0 U1 U2 ...V0 V1 V2 ...
     '''
     yuv = rgb2yuv(rgb_file)
@@ -173,15 +173,15 @@ def rgb_to_yuv422p(rgb_file, yuv_file, dtype=np.uint8):
 
 def rgb_to_yuv422sp(rgb_file, yuv_file, dtype=np.uint8):
     '''
-                                  w
+                         w
             +---------------------------+
-            |Y0Y1Y2Y3...                         |
-            |...                                           | h
+            |Y0Y1Y2Y3...                |
+            |...                        | h
             +---------------------------+
-            |U0V0U1V1...|
-            |...                   | h
+            |U0V0U1V1... |
+            |...         | h
             +------------+
-                    w/2
+                  w/2
     内存排布：Y0 Y1 Y2 ...U0 V0 U1 V1 ...
     '''
     yuv = rgb2yuv(rgb_file)
@@ -198,10 +198,10 @@ def rgb_to_yuv422sp(rgb_file, yuv_file, dtype=np.uint8):
 
 def rgb_to_yuv422_YUYV(rgb_file, yuv_file, dtype=np.uint8):
     '''
-                                  2w
+                         2w
             +---------------------------+
-            |Y0U0Y1V0Y2U1Y3V1...       |
-            |...                                           | h
+            |Y0U0Y1V0Y2U1Y3V1...        |
+            |...                        | h
             +---------------------------+
     内存排布：Y0 U0 Y1 V0 Y2 U1 Y3 V1 ...
     '''
@@ -219,10 +219,10 @@ def rgb_to_yuv422_YUYV(rgb_file, yuv_file, dtype=np.uint8):
 
 def rgb_to_yuv422_UYVY(rgb_file, yuv_file, dtype=np.uint8):
     '''
-                                  2w
+                          2w
             +---------------------------+
-            |U0Y0V0Y1U1Y2V1Y3...       |
-            |...                                           | h
+            |U0Y0V0Y1U1Y2V1Y3...        |
+            |...                        | h
             +---------------------------+
     内存排布：U0 Y0 V0 Y1 U1 Y2 V1 Y3 ...
     '''
@@ -240,10 +240,10 @@ def rgb_to_yuv422_UYVY(rgb_file, yuv_file, dtype=np.uint8):
 
 def rgb_to_yuv422_YVYU(rgb_file, yuv_file, dtype=np.uint8):
     '''
-                                  2w
+                         2w
             +---------------------------+
-            |Y0V0Y1U0Y2V1Y3U1...       |
-            |...                                           | h
+            |Y0V0Y1U0Y2V1Y3U1...        |
+            |...                        | h
             +---------------------------+
     内存排布：Y0 V0 Y1 U0 Y2 V1 Y3 U1 ...
     '''
@@ -261,10 +261,10 @@ def rgb_to_yuv422_YVYU(rgb_file, yuv_file, dtype=np.uint8):
 
 def rgb_to_yuv422_VYUY(rgb_file, yuv_file, dtype=np.uint8):
     '''
-                                  2w
+                         2w
             +---------------------------+
-            |V0Y0U0Y1V1Y2U1Y3...       |
-            |...                                           | h
+            |V0Y0U0Y1V1Y2U1Y3...        |
+            |...                        | h
             +---------------------------+
     内存排布：V0 Y0 U0 Y1 V1 Y2 U1 Y3 ...
     '''
@@ -282,16 +282,16 @@ def rgb_to_yuv422_VYUY(rgb_file, yuv_file, dtype=np.uint8):
 
 def rgb_to_yuv420p_I420(rgb_file, yuv_file, height, width, dtype=np.uint8):
     '''
-                              w
+                      w
             +--------------------+
-            |Y0Y1Y2Y3...               |
-            |...                                |  h
+            |Y0Y1Y2Y3...         |
+            |...                 | h
             +--------------------+
-            |U0U1...      | h/2
+            |U0U1...   | h/2
             +----------+
-            |V0V1...       | h/2
+            |V0V1...   | h/2
             +----------+
-                   w/2
+                 w/2
     内存排布：Y0 Y1 Y2 ...U0 U1 U2 ...V0 V1 V2 ...
     '''
     yuv = rgb2yuv(rgb_file)
@@ -309,16 +309,16 @@ def rgb_to_yuv420p_I420(rgb_file, yuv_file, height, width, dtype=np.uint8):
 
 def rgb_to_yuv420p_YV12(rgb_file, yuv_file, height, width, dtype=np.uint8):
     '''
-                              w
+                      w
             +--------------------+
-            |Y0Y1Y2Y3...               |
-            |...                                |  h
+            |Y0Y1Y2Y3...         |
+            |...                 | h
             +--------------------+
-            |V0V1...       | h/2
+            |V0V1...   | h/2
             +----------+
-            |U0U1...       | h/2
+            |U0U1...   | h/2
             +----------+
-                   w/2
+                 w/2
     内存排布：Y0 Y1 Y2 ...V0 V1 V2 ...U0 U1 U2 ...
     '''
     yuv = rgb2yuv(rgb_file)
@@ -336,14 +336,14 @@ def rgb_to_yuv420p_YV12(rgb_file, yuv_file, height, width, dtype=np.uint8):
 
 def rgb_to_yuv420sp_NV12(rgb_file, yuv_file, height, width, dtype=np.uint8):
     '''
-                                    w
+                         w
             +---------------------------+
-            |Y0Y1Y2Y3...                         |
-            |...                                           |  h
+            |Y0Y1Y2Y3...                |
+            |...                        | h
             +---------------------------+
             |U0V0U1V1...  | h/2
             +-------------+
-                     w/2
+                  w/2
     内存排布：Y0 Y1 Y2 ...U0 V0 U1 V1 ...
     '''
     yuv = rgb2yuv(rgb_file)
@@ -361,14 +361,14 @@ def rgb_to_yuv420sp_NV12(rgb_file, yuv_file, height, width, dtype=np.uint8):
 
 def rgb_to_yuv420sp_NV21(rgb_file, yuv_file, height, width, dtype=np.uint8):
     '''
-                                    w
+                         w
             +---------------------------+
-            |Y0Y1Y2Y3...                         |
-            |...                                           |  h
+            |Y0Y1Y2Y3...                |
+            |...                        | h
             +---------------------------+
             |V0U0V1U1...  | h/2
             +-------------+
-                     w/2
+                  w/2
     内存排布：Y0 Y1 Y2 ...V0 U0 V1 U1 ...
     '''
     yuv = rgb2yuv(rgb_file)
@@ -386,16 +386,16 @@ def rgb_to_yuv420sp_NV21(rgb_file, yuv_file, height, width, dtype=np.uint8):
 
 def rgb_to_yuv411p(rgb_file, yuv_file, dtype=np.uint8):
     '''
-                              w
+                      w
             +--------------------+
-            |Y0Y1Y2Y3...               |
-            |...                                |   h
+            |Y0Y1Y2Y3...         |
+            |...                 | h
             +--------------------+
-            |U0U1...      | h/2
+            |U0U1...   | h/2
             +----------+
-            |V0V1...       | h/2
+            |V0V1...   | h/2
             +----------+
-                   w/2
+                w/2
     内存排布：Y0 Y1 Y2 ...U0 U1 U2 ...V0 V1 V2 ...
     '''
     yuv = rgb2yuv(rgb_file)
@@ -412,14 +412,14 @@ def rgb_to_yuv411p(rgb_file, yuv_file, dtype=np.uint8):
 
 def rgb_to_yuv411sp(rgb_file, yuv_file, dtype=np.uint8):
     '''
-                                  w
+                         w
             +---------------------------+
-            |Y0Y1Y2Y3...                         |
-            |...                                           | h
+            |Y0Y1Y2Y3...                |
+            |...                        | h
             +---------------------------+
-            |U0V0U1V1...                        | h/2
+            |U0V0U1V1...                | h/2
             +---------------------------+
-                                  w
+                         w
     内存排布：Y0 Y1 Y2 ...U0 V0 U1 V1 ...
     '''
     yuv = rgb2yuv(rgb_file)
