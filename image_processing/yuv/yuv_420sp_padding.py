@@ -22,23 +22,18 @@ def yuv_420sp_padding(ori_file, ori_h, ori_w, new_file, new_h, new_w):
     # read from binary yuv file, convert to ndarray
     s = ori_h * ori_w
     uv_h = ori_h // 2
-    uv_w = ori_w // 2
     data = np.fromfile(file=ori_file, dtype='uint8')
     Y = data[0:s].reshape(ori_h, ori_w)
-    U = data[s:(s*5)//4].reshape(uv_h, uv_w)
-    V = data[(s*5)//4:(s*6)//4].reshape(uv_h, uv_w)
+    UV = data[s:].reshape(uv_h, ori_w)
 
     # do padding
     diff_h = new_h - ori_h
     diff_w = new_w - ori_w
     Y = np.pad(Y, ((0, diff_h), (0, diff_w)), 'constant', constant_values=0)
-    U = np.pad(U, ((0, diff_h), (0, diff_w//2)), 'constant', constant_values=0)
-    V = np.pad(V, ((0, diff_h), (0, diff_w//2)), 'constant', constant_values=0)
+    UV = np.pad(UV, ((0, diff_h), (0, diff_w)), 'constant', constant_values=0)
 
     Y = Y.flatten()
-    U = U.flatten()
-    V = V.flatten()
-    UV = np.c_[U, V].flatten()
+    UV = UV.flatten()
 
     try:
         with open(new_file, 'wb') as f:
