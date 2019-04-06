@@ -45,7 +45,87 @@ str1.find(str2) # 返回str1中首次出现str2的位置，如果没有，返回
 s *= n  # 将字符串扩展n次，拼接
 s.count(x)  # 在字符串s中统计x出现的次数
 ```
-4. 容器
+4. enumerate，输出索引号和对应的值
+```python
+for i, j in enumerate([1, 2, 3]):
+    print("%d, %d" % (i, j))
+```
+运行结果
+```text
+0, 1
+1, 2
+2, 3
+```
+5. eval，运行字符串表达式
+```python
+print(eval('2+2'))
+x=1
+print(eval('x*3'))
+```
+6. *args、**kargs
+```python
+def func1(*args):
+    for arg in args:
+        print(arg)
+def func2(**kwargs):
+    for key, value in kwargs.items():
+        print('key=%s, value=%s' % (key, value))
+# *args
+func1('aaa', 'bbb', 'ccc')
+# **kwargs用法1
+func2(a='1', b='2')
+# **kwargs用法2
+kwargs = {"a": 1, "b": "2"}
+func2(**kwargs)
+```
+运行结果
+```text
+aaa
+bbb
+ccc
+key=a, value=1
+key=b, value=2
+key=a, value=1
+key=b, value=2
+```
+7. 容器
 ```python
 # List，数组，长度可变，可以存放不同类型的元素
+list1 = []
+list1.append('aaa')
+list1.append('bbb')
+list1.append('ccc')
+'''
+# 遍历
+for l in list1:
+    print(l)
+print(list1[2]) # 索引为2
+print(list1[-2]) # 倒数第二个
+print(list1[1:]) # 从索引1开始到最后
+cmp(list1, list2) # 比较两个列表的元素
+len(list) # 列表元素个数
+max(list) # 返回列表元素最大值
+min(list) # 返回列表元素最小值
+list.append(obj) # 在列表末尾添加新的对象
+list.count(obj) # 统计某个元素在列表中出现的次数
+list.extend(seq) # 在列表末尾一次性追加另一个序列中的多个值（用新列表扩展原来的列表）
+list.index(obj) # 从列表中找出某个值第一个匹配项的索引位置
+list.insert(index, obj) # 将对象插入列表
+list.pop([index=-1]) # 移除列表中的一个元素（默认最后一个元素），并且返回该元素的值
+list.remove(obj) # 移除列表中某个值的第一个匹配项
+list.reverse() # 反向列表中元素
+list.sort(cmp=None, key=None, reverse=False) # 对原列表进行排序
+'''
+
+# tuple，元组，数据不可更改
+tup = (1, 2, 3)
+'''
+print(tup[2])
+print(tup[-2])
+print(tup[1:])
+cmp(tuple1, tuple2) # 比较两个元组元素
+len(tuple) # 计算元组元素个数
+max(tuple) # 返回元组中元素最大值
+min(tuple) # 返回元组中元素最小值
+'''
 ```
