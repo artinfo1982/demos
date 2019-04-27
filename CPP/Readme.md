@@ -373,7 +373,7 @@ int main()
     return 0;
 }
 ```
-## 处理变长形参列表（initializer_list、可变参数模板）
+## 处理变长形参列表（initializer_list、可变参数模板、stdarg）
 使用c++11的initializer_list
 ```C++
 #include <iostream>
@@ -445,6 +445,31 @@ void func(T head, Args... args)
 int main()
 {
     func("-a", 1, "-b", 2.2f);
+    return 0;
+}
+```
+使用stdarg.h
+```C++
+#include <iostream>
+#include <stdarg.h>
+
+void demo(int num, ...)
+{
+    std::cout << "input params: " << num << std::endl;
+    va_list valist;
+    const char* s;
+    va_start(valist, num);
+    for (int i=0; i<num; ++i)
+    {
+        s = va_arg(valist, const char*);
+        std::cout << s << std::endl;
+    }
+    va_end(valist);
+}
+
+int main()
+{
+    demo(3, "aaa", "bbb", "ccc");
     return 0;
 }
 ```
@@ -586,4 +611,94 @@ class Stack{
 Private:
     T elems[MAXSIZE];
 };
+```
+## C和C++混合编程
+```C++
+#ifdef __cplusplus
+extern "C"
+{
+    XXX
+}
+#endif
+// 上面这个结构实现C/C++混合编程。
+// extern "C"的作用是告诉C++程序下面这段代码是C代码，编译时不使用C++名字修饰，而应该使用C的修饰。
+```
+C调用C++   
+a.cpp a.h main.c Makefile   
+a.h
+```C++
+#ifndef __A_H__
+#define __A_H__
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+class A {
+    ...
+}
+void print(void); // 必须有一个类外函数，才能被C调用
+#ifdef __cplusplus
+}
+#endif
+#endif
+```
+a.cpp
+```C++
+#include "a.h"
+...
+void print(void)
+{
+    ...
+}
+```
+main.c
+```C
+int main()
+{
+    print();
+    return 0;
+}
+```
+Makefile
+```text
+main: main.c a.o
+    gcc -lstdc++ main.c a.o -o main
+a.o: a.h
+    g++ -c a.cpp
+```
+C++调用C   
+a.h a.c main.cpp   
+a.h
+```C++
+#ifndef __A_H__
+#define __A_H__
+extern void print(char*);
+#endif
+```
+a.c
+```C
+#include <stdio.h>
+#include "a.h"
+
+void print(char *data)
+{
+    printf("%s\n", data);
+}
+```
+main.cpp
+```C++
+extern "C"
+{
+    #include "a.h"
+}
+int main()
+{
+    print("aaa\n");
+    return 0;
+}
+```
+```shell
+gcc -c a.c
+g++ main.cpp a.o
 ```
