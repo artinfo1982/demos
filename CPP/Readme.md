@@ -702,3 +702,23 @@ int main()
 gcc -c a.c
 g++ main.cpp a.o
 ```
+## 编译动态链接库
+```shell
+gcc test.c -fPIC -shared -o libtest.so
+g++ test.cpp -fPIC -shared -o libtest.so
+```
+## Makefile示例
+```text
+all: A B
+A:
+    g++ a.cpp a.h -fPIC -shared -o liba.so
+B:
+    g++ b.cpp b.h -L./lib -la -o bin/test
+clean:
+    rm bin/test
+.PHONY: all
+```
+```shell
+make clean
+make all
+```
