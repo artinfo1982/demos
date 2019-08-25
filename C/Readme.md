@@ -5,20 +5,19 @@
 Linux32位：long(4)、float(4)、double(8)、long long(8)、long double(8)
 Linux64位：long(8)、float(4)、double(8)、long long(8)、long double(16)
 
-				win32		win64		linux32		linux64
-long			4					4					4				8
-char*			4					8					4				8
-size_t			4					8					4				8
+long：win32(4)、win64(4)、linux32(4)、linux64(8)
+char*：win32(4)、win64(8)、linux32(4)、linux64(8)
+size_t：win32(4)、win64(8)、linux32(4)、linux64(8)
 ```
 注意：unsigned float和unsigned double非法。
 
 ## const char* 和 char* const
 ```text
 const char* p;
-<-----------------从右往左看
+<---------------从右往左看
 p是一个指针，指向一个const char（指针指向的值不可改）
 char* const p;
-<-----------------从右往左看
+<---------------从右往左看
 p是一个const指针，指向一个char（指针不可变，但指向的内容可变）
 ```
 
