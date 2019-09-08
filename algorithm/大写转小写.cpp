@@ -8,7 +8,7 @@ using namespace std;
 * 0表示处理成功，-1表示失败。
 */
 
-// ascii码表，A~Z：65~90，a~z：97~122，每每个大写字母加32就是对应的小写字母
+// ascii码表，A~Z：65~90，a~z：97~122，每个大写字母加32就是对应的小写字母
 int process(const char * strInput, char * strOutput)
 {
 	if (NULL == strInput)
