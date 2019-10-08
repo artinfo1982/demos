@@ -40,11 +40,6 @@ int main()
 				y.push_back(b[j]);
 				i = j + 1;
 			}
-			else
-			{
-				cout << atoi(b) << endl;
-				return 0;
-			}
 		}
 	}
 
