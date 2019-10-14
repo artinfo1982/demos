@@ -1,16 +1,11 @@
 #include <iostream>
-#include <stdlib.h>
+#include <list>
 
 using namespace std;
 
-int cmp1(const void *a, const void *b)
+bool cmp(const list<int> &x, const list<int> &y)
 {
-	return *(int*)a - *(int*)b;
-}
-
-int cmp2(const void *a, const void *b) 
-{
-    return *(int*)b - *(int*)a;
+	return x.front() > y.front();
 }
 
 int main()
@@ -18,36 +13,47 @@ int main()
 	int m, n, i, j, z, tmp;
 	cin >> m >> n;
 	int f[n] = {0};
-	int a[n][m] = {0};
+	list<list<int> > a;
+	int res[m][n] = {0};
 	for (i = 0; i < n; ++i)
 	{
 		cin >> z;
 		f[i] = z;
 	}
-	for (j = 0; j < n; ++j)
+	for (i = 0; i < m; ++i)
 	{
-		for (i = 0; i < m; ++i)
+		list<int> l;
+		for (j = 0; j < n; ++j)
 		{
 			cin >> z;
-			a[i][j] = z;
+			l.push_back(z);
+		}
+		a.push_back(l);
+	}
+	int idx = 0;
+	list<list<int> >::iterator it;
+	for (i = 0; i < n; ++i)
+	{
+		idx = 0;
+		if (f[i] == 1)
+			a.sort();
+		else if (f[i] == -1)
+			a.sort(cmp);
+		for (it = a.begin(); it != a.end(); ++it)
+		{
+			res[idx++][i] = (*it).front();
+			(*it).pop_front();
 		}
 	}
-	for (j = n-1; j >= 0; --j)
+	for (i = 0; i < m; ++i)
 	{
-		if (f[j] == 1)
-			qsort(a[j], m, sizeof(a[j][0]), cmp1);
-		else if (f[j] == -1)
-			qsort(a[j], m, sizeof(a[j][0]), cmp2);
-	}
-	for (j = 0; j < m; ++j)
-	{
-		for (i = 0; i < n; ++i)
+		for (j = 0; j < n; ++j)
 		{
-			cout << a[i][j];
-			if (i < n-1)
+			cout << res[i][j];
+			if (j < n-1)
 				cout << " ";
 		}
-		if (j < m-1)
+		if (i < m-1)
 			cout << endl;
 	}
 	return 0;
