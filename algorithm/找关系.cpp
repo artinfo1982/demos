@@ -5,39 +5,46 @@ using namespace std;
 
 int main()
 {
-	int m, n, i, j, sum = 0, x, y;
+	int m, n, i, j, k, mul = 1, sum = 0, x, y;
 	cin >> m >> n;
 	int a[m] = {0};
-	int b[m] = {0};
-	map<char, int> s;
-	int flag = (1+m)*m/2-m;
+	map<int, int> res;
+	int flag = (1+m)*m/2;
 	string line;
+	char c;
 	for (i = 0; i < n; ++i)
 	{
 		cin >> line;
 		x = line.at(0)-65;
 		y = line.at(2)-65;
-		b[x] = 1;
-		b[y] = 1;
-		cout << "a[x]=" << a[x] << ", a[y]=" << a[y] << ", b[x]=" << b[x] << ", b[y]=" << b[y] << endl;
-		if (a[y] < a[x] && b[x] == 1 && b[y] == 1)
+		if (a[x] == 0)
+			a[x] = 1;
+		else if (a[y] == 0)
+			a[y] = 1;
+		else if (a[x] > a[y])
 		{
 			cout << "Inconsistency found after " << i+1 << " relations." << endl;
 			return 0;
 		}
 		a[y] = a[x] + 1;
-		s.insert(map<char, int>::value_type(line.at(0), 0));
-		s.insert(map<char, int>::value_type(line.at(2), 0));
+		mul = 1;
 		sum = 0;
 		for (j = 0; j < m; ++j)
 		{
 			sum += a[j];
+			mul *= a[j];
 		}
-		if (sum == flag)
+		if (mul != 0 && sum == flag)
 		{
 			cout << "Sorted sequence determined after " << i+1 << " relations: ";
-			for (auto k : s)
-				cout << k.first;
+			res.clear();
+			for (k = 0; k < m; ++k)
+				res.insert(map<int, int>::value_type(a[k], k));
+			for (auto w : res)
+			{
+				c = w.second + 65;
+				cout << c;
+			}
 			cout << endl;
 			return 0;
 		}
@@ -46,13 +53,21 @@ int main()
 	for (i = 0; i < m; ++i)
 	{
 		if (a[i] == 0)
-			sum++;
+		{
+			cout << "Sorted sequence cannot be determined." << endl;
+			return 0;
+		}
 	}
-	if (sum > 1)
+	cout << "Sorted sequence determined after " << m << " relations: ";
+	res.clear();
+	for (k = 0; k < m; ++k)
+		res.insert(map<int, int>::value_type(a[k], k));
+	for (auto w : res)
 	{
-		cout << "Sorted sequence cannot be determined." << endl;
-		return 0;
+		c = w.second + 65;
+		cout << c;
 	}
+	cout << endl;
 
 	return 0;
 }
