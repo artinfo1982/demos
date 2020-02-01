@@ -44,8 +44,8 @@ set hlsearch
 set nowrap
 set foldmethod=syntax
 set nofoldenable
-set tags+=/home/zxh/tensorflow-core/tags
-let g:ycm_global_ycm_extra_conf='/home/zxh/.vim/.ycm_extra_conf.py'
+set tags+=/home/cd/tensorflow-core/tags
+let g:ycm_global_ycm_extra_conf='/home/cd/.vim/.ycm_extra_conf.py'
 let g:ycm_enable_diagnostic_signs=0
 let g:ycm_enable_diagnostic_highlighting=0
 let Tlist_Ctags_Cmd='ctags'
